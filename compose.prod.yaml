@@ -1,0 +1,37 @@
+# =============================================================================
+# Statflow — Production compose overlay
+#
+# Usage:
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d
+#
+# This overlay switches both the backend and frontend to their `prod` build
+# targets and applies production-appropriate settings. All credentials must
+# be supplied via environment variables (never committed defaults).
+# =============================================================================
+
+services:
+
+  backend:
+    build:
+      target: prod
+    image: statflow/backend:prod
+    # No source bind-mount in production — the image is self-contained
+    volumes: []
+    environment:
+      APP_ENV: "prod"
+      APP_DEBUG: "0"
+      # Fail closed: production never inherits the dev "*" wildcard. CORS_ALLOW_ORIGIN
+      # MUST be set to the dashboard origin (e.g. https://stats.example.com) or
+      # `docker compose up` aborts with the message below.
+      CORS_ALLOW_ORIGIN: "${CORS_ALLOW_ORIGIN:?set to the dashboard origin in production (no wildcard)}"
+    restart: always
+
+  frontend:
+    build:
+      target: prod
+    image: statflow/frontend:prod
+    # No source bind-mount in production — the image is self-contained
+    volumes: []
+    ports:
+      - "${FRONTEND_PORT:-8080}:8080"
+    restart: always

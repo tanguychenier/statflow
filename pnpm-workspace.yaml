@@ -1,0 +1,5 @@
+# pnpm workspace configuration for the Statflow monorepo.
+# All app and library packages are discovered automatically from these globs.
+packages:
+  - "apps/*"
+  - "packages/*"

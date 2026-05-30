@@ -1,0 +1,17 @@
+# =============================================================================
+# Grafana dashboard provider — loads JSON dashboards from the local filesystem
+# =============================================================================
+
+apiVersion: 1
+
+providers:
+  - name: Statflow
+    orgId: 1
+    folder: Statflow
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false

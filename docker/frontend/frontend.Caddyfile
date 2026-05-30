@@ -1,0 +1,27 @@
+# Caddy config for the production Statflow frontend SPA.
+# All routes fall back to index.html so Vue Router (history mode) works correctly.
+# Binds :8080 so the non-root statflow user does not need CAP_NET_BIND_SERVICE.
+
+:8080 {
+    root * /srv/statflow-frontend
+
+    # Serve pre-compressed assets when available
+    encode gzip zstd
+
+    # Cache immutable hashed assets aggressively
+    @immutable {
+        path /assets/*
+    }
+    header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+    # No-cache for the HTML entry point so updated deployments propagate
+    @html {
+        path *.html
+    }
+    header @html Cache-Control "no-cache, no-store, must-revalidate"
+
+    # SPA fallback — unknown paths serve index.html
+    try_files {path} /index.html
+
+    file_server
+}

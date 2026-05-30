@@ -1,0 +1,139 @@
+# Lefthook — git hook runner for the Statflow monorepo.
+# All commands execute inside Docker containers; no host tool dependencies.
+# Reference: https://github.com/evilmartians/lefthook
+
+# ── Global settings ──────────────────────────────────────────────────────────
+colors: true
+no_tty: true
+
+# Shared Docker run prefix used in every command below.
+# We mount the repo root at /repo and set it as the working directory.
+# (Lefthook does not support YAML anchors natively, so each command is explicit.)
+
+# =============================================================================
+# pre-commit — run fast checks on staged files only
+# =============================================================================
+pre-commit:
+  parallel: true
+
+  commands:
+    # Lint Dockerfiles (staged only) — explicit config flag matches make lint-dockerfiles.
+    hadolint:
+      glob: "docker/**/*.{Dockerfile,dockerfile},**/Dockerfile,**/Dockerfile.*"
+      run: >
+        docker run --rm
+        -v "{root}:/repo" -w /repo
+        hadolint/hadolint:v2.12.0
+        hadolint --config /repo/.hadolint.yaml {staged_files}
+
+    # Lint YAML files (staged only).
+    yamllint:
+      glob: "**/*.{yaml,yml}"
+      run: >
+        docker run --rm
+        -v "{root}:/repo" -w /repo
+        pipelinecomponents/yamllint:0.31.0
+        yamllint -c /repo/.yamllint.yaml {staged_files}
+
+    # Lint Markdown files (staged only) — explicit config flag matches make lint-markdown.
+    markdownlint:
+      glob: "**/*.{md,mdx}"
+      run: >
+        docker run --rm
+        -v "{root}:/repo" -w /repo
+        davidanson/markdownlint-cli2:v0.14.0
+        --config /repo/.markdownlint.jsonc {staged_files}
+
+    # Enforce EditorConfig rules on staged files — explicit config flag matches make lint-editorconfig.
+    editorconfig-checker:
+      run: >
+        docker run --rm
+        -v "{root}:/repo" -w /repo
+        mstruebing/editorconfig-checker:v3.0.3
+        ec -config /repo/.editorconfig-checker.json {staged_files}
+
+    # Scan for secrets in staged content.
+    # protect --staged requires git; drop --no-git which contradicts --staged.
+    gitleaks:
+      run: >
+        docker run --rm
+        -v "{root}:/repo" -w /repo
+        ghcr.io/gitleaks/gitleaks:v8.24.0
+        protect --staged --config /repo/.gitleaks.toml --source /repo
+
+    # Lint shell scripts — explicit rcfile matches make lint-shell.
+    shellcheck:
+      glob: "**/*.{sh,bash}"
+      run: >
+        docker run --rm
+        -v "{root}:/repo" -w /repo
+        koalaman/shellcheck:v0.10.0
+        shellcheck --rcfile=/repo/.shellcheckrc {staged_files}
+
+    # Lint SQL migrations — explicit config matches make lint-sql.
+    sqlfluff:
+      glob: "apps/**/*.sql,packages/**/*.sql"
+      run: >
+        docker run --rm
+        -v "{root}:/repo" -w /repo
+        sqlfluff/sqlfluff:3.3.1
+        sqlfluff lint --config /repo/.sqlfluff {staged_files}
+
+    # Enforce filename conventions on the whole tree (staged file path check).
+    lint-filenames:
+      run: >
+        docker run --rm
+        -v "{root}:/repo:ro" -w /repo
+        lslintorg/ls-lint:1.11.2
+        /ls-lint --config /repo/.ls-lint.yml
+
+# =============================================================================
+# commit-msg — validate commit message format
+# =============================================================================
+commit-msg:
+  commands:
+    commitlint:
+      # {1} is the path to the commit-msg tmp file passed by git.
+      # Use npx with a pinned version so no local node_modules install is needed.
+      run: >
+        docker run --rm
+        -v "{root}:/repo" -w /repo
+        -v "{1}:/tmp/commit-msg:ro"
+        node:22-alpine
+        sh -c "npx --yes @commitlint/cli@19.6.1 --edit /tmp/commit-msg --config /repo/commitlint.config.mjs"
+
+# =============================================================================
+# pre-push — heavier checks before pushing (type-check + tests)
+# =============================================================================
+pre-push:
+  parallel: false
+
+  commands:
+    # TypeScript type-check for the frontend.
+    typecheck-frontend:
+      run: >
+        docker compose run --rm frontend
+        pnpm --filter @statflow/frontend typecheck
+
+    # TypeScript type-check for the tracker package.
+    typecheck-tracker:
+      run: >
+        docker compose run --rm frontend
+        pnpm --filter @statflow/tracker typecheck
+
+    # PHPStan static analysis on the backend.
+    phpstan:
+      run: >
+        docker compose run --rm backend
+        php vendor/bin/phpstan analyse --no-progress
+
+    # Full test suite.
+    test-backend:
+      run: >
+        docker compose run --rm backend
+        php vendor/bin/phpunit --testdox
+
+    test-frontend:
+      run: >
+        docker compose run --rm frontend
+        pnpm --filter @statflow/frontend test --run

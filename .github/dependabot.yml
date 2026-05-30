@@ -1,0 +1,98 @@
+version: 2
+
+updates:
+  # -------------------------------------------------------------------------
+  # Composer (PHP / Symfony backend)
+  # -------------------------------------------------------------------------
+  - package-ecosystem: composer
+    directory: /apps/backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "build(backend)"
+    labels:
+      - dependencies
+      - php
+    groups:
+      symfony:
+        patterns:
+          - "symfony/*"
+          - "doctrine/*"
+
+  # -------------------------------------------------------------------------
+  # npm / pnpm (frontend + tracker)
+  # -------------------------------------------------------------------------
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "build(deps)"
+    labels:
+      - dependencies
+      - javascript
+    groups:
+      vue-ecosystem:
+        patterns:
+          - "vue"
+          - "@vue/*"
+          - "vite"
+          - "@vitejs/*"
+          - "pinia"
+          - "vue-router"
+          - "@tanstack/vue-query"
+          - "vue-i18n"
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "happy-dom"
+          - "@testing-library/*"
+
+  # -------------------------------------------------------------------------
+  # Docker base images (backend + frontend build contexts)
+  # -------------------------------------------------------------------------
+  - package-ecosystem: docker
+    directories:
+      - /docker/backend
+      - /docker/frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build(docker)"
+    labels:
+      - dependencies
+      - docker
+
+  # -------------------------------------------------------------------------
+  # GitHub Actions
+  # -------------------------------------------------------------------------
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+    labels:
+      - dependencies
+      - github-actions

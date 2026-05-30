@@ -1,0 +1,38 @@
+{
+  "name": "statflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Privacy-first, cookieless, open-source web & product analytics platform.",
+  "author": "Tanguy Chénier <tanguychenier@gmail.com>",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tansoftware/statflow.git"
+  },
+  "homepage": "https://github.com/tansoftware/statflow#readme",
+  "bugs": {
+    "url": "https://github.com/tansoftware/statflow/issues"
+  },
+  "keywords": [
+    "analytics",
+    "web-analytics",
+    "product-analytics",
+    "privacy",
+    "cookieless",
+    "open-source",
+    "self-hosted"
+  ],
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint:js": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "lefthook": "^1.9.2"
+  }
+}

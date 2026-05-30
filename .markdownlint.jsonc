@@ -1,0 +1,52 @@
+{
+  // markdownlint-cli2 configuration for the Statflow monorepo.
+  // Rule reference: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+  // Inherit all default rules, then override below.
+  "default": true,
+
+  // Paths to exclude — consistent with the Makefile lint-markdown ignores.
+  "ignores": [
+    "**/node_modules/**",
+    "**/vendor/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.pnpm-store/**",
+    "**/coverage/**"
+  ],
+
+  // MD013 — Line length. Disabled: enforcing a hard wrap on prose documentation
+  // is low-value and high-noise. The structural rules below remain enforced.
+  "MD013": false,
+
+  // MD040 — Fenced code language. Disabled: many illustrative blocks (directory
+  // trees, sample console output) have no meaningful language to declare.
+  "MD040": false,
+
+  // MD033 — Inline HTML. Allow a curated set of tags used in the README header
+  // (centered layout, badge links) and elsewhere.
+  "MD033": {
+    "allowed_elements": ["img", "br", "details", "summary", "sub", "sup", "div", "a"]
+  },
+
+  // MD041 — First heading must be an H1. Disable for fragments / ADRs.
+  "MD041": false,
+
+  // MD051 — Link fragments. Disabled: headings use emoji, whose GitHub-generated
+  // anchors the linter cannot reproduce, yielding false positives on valid links.
+  "MD051": false,
+
+  // MD024 — Duplicate headings. Siblings are fine; only siblings-in-context matter.
+  "MD024": {
+    "siblings_only": true
+  },
+
+  // MD028 — Blank line inside blockquote. Permitted for readability.
+  "MD028": false,
+
+  // MD046 — Code block style: fenced preferred over indented.
+  "MD046": { "style": "fenced" },
+
+  // MD048 — Code fence character: backtick preferred.
+  "MD048": { "style": "backtick" }
+}

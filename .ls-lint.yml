@@ -1,0 +1,33 @@
+# ls-lint — filename conventions for the Statflow monorepo.
+# Reference: https://ls-lint.org/
+#
+# Scope is deliberately narrow: enforce only the two conventions that are
+# unambiguous and genuinely valuable — PSR-4 PHP class files (PascalCase) and
+# Vue single-file components (PascalCase). Tool/config filenames such as
+# vite.config.ts or commitlint.config.mjs, GitHub-mandated names under
+# .github/, and vendored directories are intentionally not policed: doing so
+# produces only false positives.
+
+ls:
+  apps/backend/src:
+    .php: PascalCase
+
+  apps/frontend/src:
+    .vue: PascalCase
+
+ignore:
+  # ls-lint v1 matches ignore entries as path prefixes from the repo root,
+  # so nested vendored/build directories must be listed explicitly.
+  - .git
+  - .github
+  - node_modules
+  - apps/frontend/node_modules
+  - apps/frontend/dist
+  - packages/tracker/node_modules
+  - packages/tracker/dist
+  - apps/backend/vendor
+  - apps/backend/var
+  - .pnpm-store
+  - dist
+  - build
+  - coverage

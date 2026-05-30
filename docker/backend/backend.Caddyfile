@@ -1,0 +1,116 @@
+# =============================================================================
+# Statflow — FrankenPHP / Caddy server configuration
+#
+# FrankenPHP runs in worker mode: a pool of long-lived PHP workers handle
+# requests without the per-request bootstrap cost. The Symfony Runtime
+# component keeps the kernel alive between requests.
+#
+# Environment variables (injected via compose.yaml / .env):
+#   SERVER_NAME          — bind address(es), e.g. ":80" or "api.statflow.local"
+#   FRANKENPHP_WORKERS   — number of PHP worker processes (default: 4)
+# =============================================================================
+
+{
+    # FrankenPHP global options block
+    frankenphp
+
+    # Admin API — used by Caddy's /metrics endpoint and live config reload.
+    # Bound to loopback inside the container; compose.yaml maps 127.0.0.1:2019
+    # on the host for local access without exposing it to other containers.
+    admin localhost:2019
+}
+
+# Primary virtual host
+{$SERVER_NAME:":80"} {
+
+    # ------------------------------------------------------------------
+    # Logging
+    # ------------------------------------------------------------------
+    log {
+        output stdout
+        format json
+        level  INFO
+    }
+
+    # ------------------------------------------------------------------
+    # Metrics endpoint (scraped by Prometheus via Caddy admin)
+    # ------------------------------------------------------------------
+    handle /metrics {
+        metrics
+    }
+
+    # ------------------------------------------------------------------
+    # PHP worker pool
+    #
+    # num    — defaults to the FRANKENPHP_WORKERS env var; falls back to
+    #          2× the number of available CPU threads when unset.
+    # env    — pass APP_ENV so the Symfony worker can self-configure.
+    # ------------------------------------------------------------------
+    php_server {
+        root /app/public
+        worker {
+            file     /app/public/index.php
+            num      {$FRANKENPHP_WORKERS:4}
+            env      APP_ENV {$APP_ENV:prod}
+        }
+    }
+
+    # ------------------------------------------------------------------
+    # Static assets — served directly by Caddy, bypassing PHP entirely.
+    # The /public/build directory is populated by `pnpm run build` for
+    # any bundled backend assets (unlikely in an API-only backend but
+    # present for Symfony's asset mapper / Webpack Encore support).
+    # ------------------------------------------------------------------
+    handle /build/* {
+        root * /app/public
+        encode gzip zstd
+        @immutable path_regexp \.[a-f0-9]{8,}\.(js|css|woff2?|png|svg|ico)$
+        header @immutable Cache-Control "public, max-age=31536000, immutable"
+        file_server
+    }
+
+    # Serve favicon and robots.txt without hitting PHP
+    handle /favicon.ico {
+        root * /app/public
+        file_server
+    }
+    handle /robots.txt {
+        root * /app/public
+        file_server
+    }
+
+    # ------------------------------------------------------------------
+    # CORS pre-flight — handled at the Caddy layer for OPTIONS requests
+    # so PHP workers are not woken for preflight traffic.
+    # ------------------------------------------------------------------
+    @options method OPTIONS
+    handle @options {
+        header Access-Control-Allow-Origin  "{$CORS_ALLOW_ORIGIN:*}"
+        header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        header Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+        header Access-Control-Max-Age       "3600"
+        respond "" 204
+    }
+
+    # ------------------------------------------------------------------
+    # Security headers applied to all responses
+    # ------------------------------------------------------------------
+    header {
+        # Never send Referrer info outside the origin
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Prevent MIME-type sniffing
+        X-Content-Type-Options "nosniff"
+        # No embedding in iframes from other origins
+        X-Frame-Options "DENY"
+        # Remove the Server header to avoid fingerprinting
+        -Server
+    }
+
+    # ------------------------------------------------------------------
+    # Health-check route — answered by Caddy, never touches PHP.
+    # Used by Docker's HEALTHCHECK and load-balancer probes.
+    # ------------------------------------------------------------------
+    handle /healthz {
+        respond "OK" 200
+    }
+}

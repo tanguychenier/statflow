@@ -1,0 +1,59 @@
+# =============================================================================
+# Statflow — .dockerignore
+#
+# Prevents build-context bloat and leaking sensitive files into images.
+# Rules are applied relative to the repo root (build context = ".").
+# =============================================================================
+
+# ── Version control ──────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+.github
+
+# ── Environment / secrets — never in an image ───────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Editor / IDE metadata ────────────────────────────────────────────────────
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Node artefacts ───────────────────────────────────────────────────────────
+node_modules
+**/node_modules
+.pnpm-store
+
+# ── PHP / Composer artefacts ─────────────────────────────────────────────────
+vendor
+**/vendor
+
+# ── Test and coverage output ─────────────────────────────────────────────────
+coverage
+.nyc_output
+**/coverage
+
+# ── Build output (re-generated inside the build stage) ──────────────────────
+apps/backend/var/cache
+apps/backend/var/log
+apps/frontend/dist
+
+# ── Documentation ────────────────────────────────────────────────────────────
+docs
+*.md
+
+# ── Docker build files themselves (avoid recursive context bloat) ────────────
+# (compose.yaml is fine — not copied into images)
+
+# ── CI / local tooling configs not needed in images ─────────────────────────
+.editorconfig
+.prettierrc*
+.eslintrc*
+.phpcs.xml*
+phpunit.xml*
+psalm.xml*

@@ -1,0 +1,105 @@
+name: Bug Report
+description: Report a reproducible defect in Statflow.
+title: "fix: <short description>"
+labels: [bug, triage]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill in as much detail as possible — it helps us triage and fix issues faster.
+
+        Before submitting, please search [existing issues](https://github.com/tansoftware/statflow/issues) to avoid duplicates.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of Statflow is affected?
+      options:
+        - Tracker (client-side script)
+        - Backend (Symfony API / ingestion)
+        - Dashboard (Vue SPA)
+        - Data pipeline (Redis Streams → ClickHouse)
+        - Docker / self-hosting
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Statflow version / commit SHA
+      placeholder: "e.g. 1.2.3 or abc1234"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the bug.
+      placeholder: "When I do X, Y happens instead of Z."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide the minimal steps needed to reproduce the issue.
+      placeholder: |
+        1. Start with `docker compose up -d`
+        2. Navigate to…
+        3. Observe…
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      placeholder: "What should have happened?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      placeholder: "What actually happened? Include any error messages or stack traces."
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Fill in all fields that are relevant.
+      value: |
+        - OS:
+        - Docker version:
+        - Browser (if dashboard/tracker issue):
+        - Deployment type: self-hosted / docker compose
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste any relevant log output here. Use ` ```log ` fences for readability.
+      render: text
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched the existing issues and this is not a duplicate.
+          required: true
+        - label: I have checked whether this issue is reproduced on the latest version of Statflow.
+          required: false
+        - label: I have read the [Contributing guide](../../CONTRIBUTING.md).
+          required: true

@@ -1,0 +1,38 @@
+# =============================================================================
+# Statflow — Prometheus scrape configuration
+# =============================================================================
+
+global:
+  scrape_interval:     15s   # Default interval; overridden per job
+  evaluation_interval: 15s
+  scrape_timeout:      10s
+
+  external_labels:
+    environment: "development"
+    project:     "statflow"
+
+# Alerting — placeholder; wire up Alertmanager when needed
+alerting:
+  alertmanagers: []
+
+rule_files: []
+
+scrape_configs:
+  # ── OTel Collector metrics (Prometheus exporter inside the collector) ────────
+  - job_name: "otel-collector"
+    static_configs:
+      - targets: ["otel-collector:9090"]
+        labels:
+          service: "otel-collector"
+
+  # ── Prometheus self-scrape ───────────────────────────────────────────────────
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ── Backend (FrankenPHP exposes /metrics via Caddy metrics endpoint) ─────────
+  # Uncomment once the backend image is up and the metrics route is wired.
+  # - job_name: "statflow-backend"
+  #   static_configs:
+  #     - targets: ["backend:2019"]   # Caddy admin interface
+  #   metrics_path: /metrics

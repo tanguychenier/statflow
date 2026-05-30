@@ -1,0 +1,77 @@
+# Gitleaks — secret scanning configuration for Statflow.
+# Full reference: https://github.com/gitleaks/gitleaks#configuration
+
+title = "Statflow Gitleaks Configuration"
+
+[extend]
+# Inherit the curated upstream ruleset; we only extend/override below.
+useDefault = true
+
+# ── Global allow-list ────────────────────────────────────────────────────────
+# This top-level [allowlist] block applies to ALL rules.
+# Use it for well-known placeholder patterns and environment-variable references.
+[allowlist]
+description = "Known safe patterns — placeholders, env-var substitutions, and example values"
+regexes = [
+  # Example / placeholder tracker keys in docs, tests, and Storybook fixtures.
+  # stk_ is Statflow's own public tracker-key prefix (see TrackerKey value object);
+  # a leaked third-party credential would never carry it. Demo keys such as
+  # stk_live_abc123 are deliberate, non-sensitive placeholders.
+  '''stk_(live_|test_)?[A-Za-z0-9_-]{6,64}''',
+  # Shell variable references in DSNs (e.g. ${POSTGRES_PASSWORD}) — not real secrets.
+  '''\$\{[A-Z_]+\}''',
+  # Generic placeholder labels used in documentation.
+  '''your[-_]?(api[-_]?)?key''',
+  '''REPLACE[-_]ME''',
+  '''example[-_]?secret''',
+  # Hex lorem-ipsum strings commonly found in API docs.
+  '''abcdef1234567890''',
+]
+paths = [
+  # Whole-file exclusions — never real secrets in these locations.
+  '''.env\.example''',
+  '''.env\.\w+\.example''',
+  # Vendored and generated trees — contain third-party code, not project secrets.
+  '''vendor/''',
+  '''node_modules/''',
+  '''\.pnpm-store/''',
+  '''dist/''',
+  '''build/''',
+  # Local, gitignored Symfony dev env files — never committed to the repo.
+  '''apps/backend/\.env(\.\w+)?$''',
+]
+
+# ── Custom rules for Statflow-specific patterns ──────────────────────────────
+
+[[rules]]
+id          = "statflow-clickhouse-dsn"
+description = "ClickHouse DSN with embedded password"
+regex       = '''clickhouse://[^:]+:[^@]{8,}@'''
+severity    = "high"
+tags        = ["database", "clickhouse"]
+
+  [rules.allowlist]
+  description = "Shell variable references in DSNs are not real secrets"
+  regexes     = ['''\$\{[A-Z_]+\}''']
+
+[[rules]]
+id          = "statflow-postgres-dsn"
+description = "PostgreSQL DSN with embedded password"
+regex       = '''postgres(?:ql)?://[^:]+:[^@]{8,}@'''
+severity    = "high"
+tags        = ["database", "postgres"]
+
+  [rules.allowlist]
+  description = "Shell variable references in DSNs are not real secrets"
+  regexes     = ['''\$\{[A-Z_]+\}''']
+
+[[rules]]
+id          = "statflow-redis-auth"
+description = "Redis URL with authentication token"
+regex       = '''redis(?:s)?://:[^@]{8,}@'''
+severity    = "high"
+tags        = ["cache", "redis"]
+
+  [rules.allowlist]
+  description = "Shell variable references in DSNs are not real secrets"
+  regexes     = ['''\$\{[A-Z_]+\}''']

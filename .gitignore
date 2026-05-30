@@ -1,0 +1,93 @@
+# =============================================================================
+# Statflow — root .gitignore
+# =============================================================================
+
+# ── PHP / Composer ────────────────────────────────────────────────────────────
+vendor/
+.phpunit.result.cache
+.php_cs.cache
+.php-cs-fixer.cache
+
+# ── Node / pnpm ──────────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+pnpm-debug.log*
+npm-debug.log*
+yarn-error.log*
+
+# ── Build artifacts ───────────────────────────────────────────────────────────
+dist/
+build/
+.output/
+.nuxt/
+.vite/
+coverage/
+*.tsbuildinfo
+.parcel-cache/
+
+# ── Environment & secrets ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.key
+*.pem
+*.p12
+*.pfx
+
+# ── Docker local volumes (if bind-mounted on host) ───────────────────────────
+.docker-volumes/
+data/clickhouse/
+data/postgres/
+data/redis/
+
+# ── IDE & editor ─────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+.fleet/
+nbproject/
+
+# ── OS cruft ─────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ── Logs & temp ───────────────────────────────────────────────────────────────
+*.log
+*.log.*
+tmp/
+temp/
+.cache/
+
+# ── Symfony runtime cache / logs ─────────────────────────────────────────────
+var/
+
+# ── Test output ───────────────────────────────────────────────────────────────
+junit.xml
+test-results/
+playwright-report/
+
+# ── Tool caches & mutation-testing sandboxes ──────────────────────────────────
+.deptrac.cache
+.phpunit.cache/
+.phpunit.result.cache
+.stryker-tmp/
+
+# ── Symfony runtime (apps/backend/var/ matched by bare var/ above; explicit for clarity) ──
+apps/backend/var/
+
+# ── Per-app test coverage output ──────────────────────────────────────────────
+apps/*/coverage/
+
+# ── Security scanning artifacts ───────────────────────────────────────────────
+gitleaks-report.json
+
+# Internal QA audit reports — not part of the public deliverable
+docs/qa/

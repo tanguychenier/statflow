@@ -1,0 +1,48 @@
+[sqlfluff]
+# SQLFluff configuration for Statflow SQL migrations.
+# Primary dialect is ClickHouse (analytics datastore migrations in apps/ and packages/).
+# PostgreSQL path overrides are handled via nested .sqlfluff files.
+# Reference: https://docs.sqlfluff.com/en/stable/configuration.html
+
+dialect       = clickhouse
+templater     = raw
+
+# File extensions to lint.
+sql_file_exts = .sql
+
+# Maximum line length for SQL (consistent with other languages in this repo).
+max_line_length = 120
+
+# Restore the default large-file safety limit.
+# The lint-sql Makefile target scopes to apps/ + packages/ only, so large
+# schema files in docs/ are never parsed by make lint-sql.
+large_file_skip_byte_limit = 20000
+
+# Indentation: 4 spaces (consistent with PHP/SQL convention).
+indent_unit    = space
+tab_space_size = 4
+
+# ── Rules ────────────────────────────────────────────────────────────────────
+[sqlfluff:rules]
+# Capitalise keywords, data types, and functions — improves readability.
+capitalisation_policy = upper
+
+# Trailing commas in SELECT lists — prefer leading commas for diffs.
+select_clause_trailing_comma = forbid
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.identifiers]
+# Identifiers (table/column names) should be lowercase snake_case.
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.literals]
+capitalisation_policy = upper
+
+[sqlfluff:rules:layout.indent]
+indent_unit    = space
+tab_space_size = 4

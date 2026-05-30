@@ -1,0 +1,61 @@
+# yamllint configuration for the Statflow monorepo.
+# Rule reference: https://yamllint.readthedocs.io/en/stable/rules.html
+
+extends: default
+
+ignore: |
+  node_modules/
+  vendor/
+  dist/
+  build/
+  .git/
+  pnpm-lock.yaml
+  # Symfony Flex scaffolds 4-space YAML; these recipe-managed files are not
+  # hand-written project code and must not be re-indented (Symfony convention).
+  apps/backend/config/
+  apps/backend/deptrac.yaml
+  apps/backend/compose.yaml
+  apps/backend/compose.override.yaml
+
+rules:
+  # Allow files to start with the YAML document marker (---) or not.
+  document-start: disable
+
+  # GitHub Actions workflows use very long lines; keep the limit generous.
+  line-length:
+    max: 120
+    level: warning
+
+  # Require exactly 2-space indentation throughout.
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+
+  # Allow both "key: value" and "key:\n  value" block styles.
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+
+  # Prohibit duplicate keys — they are almost always a copy-paste error.
+  key-duplicates: enable
+
+  # Require a space after every colon in mappings.
+  colons:
+    max-spaces-before: 0
+    # Allow column-aligned values (e.g. aligned env blocks in compose.yaml).
+    max-spaces-after: -1
+
+  # Require a space after every comma in flow sequences/mappings.
+  commas:
+    max-spaces-before: 0
+    min-spaces-after: 1
+
+  # Truthy values: accept only lowercase true/false to avoid surprises.
+  truthy:
+    allowed-values: ["true", "false"]
+    check-keys: false

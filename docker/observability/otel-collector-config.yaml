@@ -1,0 +1,89 @@
+# =============================================================================
+# Statflow — OpenTelemetry Collector configuration
+#
+# Receives traces and metrics from the Symfony backend (via OTLP/gRPC or HTTP)
+# and from FrankenPHP's built-in instrumentation, then exports to Prometheus
+# (metrics) and stdout (traces — swap for Jaeger/Tempo in production).
+# =============================================================================
+
+extensions:
+  health_check:
+    endpoint: "0.0.0.0:13133"
+
+receivers:
+  # OTLP receiver — accept both gRPC (4317) and HTTP (4318) from the backend
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+        cors:
+          allowed_origins:
+            - "http://localhost:*"
+
+  # Prometheus receiver — scrape the collector's own metrics
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: "otel-collector"
+          scrape_interval: 15s
+          static_configs:
+            - targets: ["localhost:8888"]
+
+processors:
+  # Batch processor — reduces export requests by grouping spans/metrics
+  batch:
+    send_batch_size: 512
+    timeout: 5s
+
+  # Memory limiter — prevent OOM under bursty load
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+
+  # Resource attributes applied to every signal from this environment
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: "development"
+        action: insert
+      - key: service.namespace
+        value: "statflow"
+        action: insert
+
+exporters:
+  # Expose metrics for Prometheus to scrape
+  prometheus:
+    endpoint: "0.0.0.0:9090"
+    namespace: statflow
+    send_timestamps: true
+    metric_expiration: 180m
+
+  # Debug exporter — prints traces/metrics to stdout in dev (replace with
+  # Jaeger or Grafana Tempo for production)
+  debug:
+    verbosity: normal
+    sampling_initial: 5
+    sampling_thereafter: 100
+
+service:
+  extensions: [health_check]
+
+  pipelines:
+    traces:
+      receivers:  [otlp]
+      processors: [memory_limiter, batch]
+      exporters:  [debug]
+
+    metrics:
+      receivers:  [otlp, prometheus]
+      processors: [memory_limiter, resource, batch]
+      exporters:  [prometheus]
+
+  telemetry:
+    logs:
+      level: warn
+    metrics:
+      address: "0.0.0.0:8888"

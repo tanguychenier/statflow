@@ -1,0 +1,23 @@
+# =============================================================================
+# Grafana datasource provisioning — Prometheus
+#
+# Grafana reads this file at startup and creates the datasource automatically.
+# No manual UI configuration required.
+# =============================================================================
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: statflow-prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      # Align scrape interval with prometheus.yml global
+      timeInterval: "15s"
+      # exemplarTraceIdDestinations intentionally omitted: no Tempo service is
+      # provisioned yet. Add this block once a trace storage backend exists.

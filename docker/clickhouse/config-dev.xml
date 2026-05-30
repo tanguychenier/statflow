@@ -1,0 +1,48 @@
+<!--
+    ClickHouse low-memory configuration for local development.
+
+    These overrides are merged on top of the default config.xml by the
+    ClickHouse Docker image when placed in /etc/clickhouse-server/config.d/.
+
+    Goal: keep RSS well below 1 GB on a developer laptop so the stack can
+    run alongside other containers without causing OOM pressure.
+-->
+<clickhouse>
+    <!-- Limit total memory ClickHouse may use (1 GB for dev) -->
+    <max_server_memory_usage>1073741824</max_server_memory_usage>
+
+    <!-- Merge / mutation pool sizes for dev.
+         The constraint is:
+           number_of_free_entries_in_pool_to_execute_mutation
+             <= background_pool_size * background_merges_mutations_concurrency_ratio
+         Default mutation threshold is 20; default ratio is 2.
+         We set pool_size=16 → 16*2=32 which comfortably exceeds 20. -->
+    <background_pool_size>16</background_pool_size>
+    <background_move_pool_size>2</background_move_pool_size>
+    <background_fetches_pool_size>2</background_fetches_pool_size>
+
+    <!-- Keep the merge_tree mutation threshold low to match the reduced pool -->
+    <merge_tree>
+        <number_of_free_entries_in_pool_to_execute_mutation>8</number_of_free_entries_in_pool_to_execute_mutation>
+    </merge_tree>
+
+    <!-- Mark cache — default 5 GB is too large for dev -->
+    <mark_cache_size>536870912</mark_cache_size>
+
+    <!-- Uncompressed cache — disabled in dev to save RAM -->
+    <uncompressed_cache_size>0</uncompressed_cache_size>
+
+    <!-- Disable crash-reporter pings -->
+    <send_crash_reports>
+        <enabled>false</enabled>
+    </send_crash_reports>
+
+    <!-- Logging — keep it concise in dev -->
+    <logger>
+        <level>warning</level>
+        <log>/var/log/clickhouse-server/clickhouse-server.log</log>
+        <errorlog>/var/log/clickhouse-server/clickhouse-server.err.log</errorlog>
+        <size>50M</size>
+        <count>3</count>
+    </logger>
+</clickhouse>

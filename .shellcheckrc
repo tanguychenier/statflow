@@ -1,0 +1,21 @@
+# ShellCheck configuration for the Statflow monorepo.
+# Reference: https://www.shellcheck.net/wiki/
+
+# Target shell: bash (most CI scripts use bash explicitly).
+shell=bash
+
+# Enable all optional checks by default.
+enable=all
+
+# ── Global exclusions (with rationale) ───────────────────────────────────────
+
+# SC1090 — "Can't follow non-constant source". Sourcing dynamic paths is
+# intentional in bootstrap scripts; shellcheck cannot statically resolve them.
+disable=SC1090
+
+# SC1091 — "Not following: ./file". Same reason as SC1090 — dynamic includes.
+disable=SC1091
+
+# SC2312 — "Consider invoking this command separately to avoid masking its
+# return value." Useful but too noisy when piping is idiomatic.
+disable=SC2312

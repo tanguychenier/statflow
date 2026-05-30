@@ -1,0 +1,29 @@
+# Hadolint — Dockerfile linter configuration.
+# Full rule reference: https://github.com/hadolint/hadolint#rules
+
+# Treat all findings as errors by default; individual overrides below.
+failure-threshold: warning
+
+# Rules disabled globally (with rationale):
+ignored:
+  # DL3008 — "Pin versions in apt get install" — we pin at image build time via
+  # explicit version strings in Dockerfiles, so blanket enforcement causes false
+  # positives when using virtual packages.
+  - DL3008
+  # DL3018 — equivalent for Alpine apk; same reasoning.
+  - DL3018
+  # DL3059 — "Multiple consecutive RUN instructions." Multi-stage builds
+  # intentionally use separate RUN layers for cache granularity.
+  - DL3059
+
+# Trusted registries; warn if an image is pulled from elsewhere.
+trustedRegistries:
+  - docker.io
+  - ghcr.io
+  - registry.hub.docker.com
+
+# Override individual rule severity (error | warning | info | style | ignore).
+override:
+  warning:
+    # SC2086 is a shellcheck rule forwarded by hadolint; keep as warning.
+    - SC2086

@@ -1,0 +1,53 @@
+# EditorConfig enforces consistent coding style across all editors and IDEs.
+# See https://editorconfig.org for the specification.
+root = true
+
+# ── Baseline: every file ────────────────────────────────────────────────────
+[*]
+charset              = utf-8
+end_of_line          = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style         = space
+indent_size          = 2
+
+# ── PHP ─────────────────────────────────────────────────────────────────────
+[*.php]
+indent_size = 4
+
+# ── Python (scripts, tooling) ────────────────────────────────────────────────
+[*.py]
+indent_size = 4
+
+# ── Rust (future) ────────────────────────────────────────────────────────────
+[*.rs]
+indent_size = 4
+
+# ── SQL (ClickHouse migrations) ─────────────────────────────────────────────
+[*.sql]
+indent_size = 4
+
+# ── Makefile — tabs are semantically required ────────────────────────────────
+[{Makefile,*.mk,GNUmakefile}]
+indent_style = tab
+
+# ── Go (tooling scripts, future) ─────────────────────────────────────────────
+[*.go]
+indent_style = tab
+
+# ── Markdown — preserve intentional trailing spaces (line breaks) ────────────
+[*.{md,mdx}]
+trim_trailing_whitespace = false
+
+# ── Vue SFCs, CSS, HTML ─────────────────────────────────────────────────────
+[*.{vue,css,html}]
+indent_size = 2
+
+# ── XML (ClickHouse config, etc.) ─────────────────────────────────────────────
+[*.xml]
+indent_size = 2
+
+# ── Binary / generated — do not enforce anything ────────────────────────────
+[*.{png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot,pdf,zip,lock}]
+insert_final_newline     = false
+trim_trailing_whitespace = false

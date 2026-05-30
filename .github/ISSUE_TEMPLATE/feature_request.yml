@@ -1,0 +1,77 @@
+name: Feature Request
+description: Propose a new feature or enhancement for Statflow.
+title: "feat: <short description>"
+labels: [enhancement, triage]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an improvement to Statflow. For large or architectural changes, consider opening a [GitHub Discussion](https://github.com/tansoftware/statflow/discussions) first so the community can shape the idea before implementation begins.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which area of Statflow does this feature affect?
+      options:
+        - Tracker (client-side script)
+        - Backend (Symfony API / ingestion)
+        - Dashboard (Vue SPA)
+        - Data pipeline (Redis Streams → ClickHouse)
+        - Docker / self-hosting
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What problem does this solve? Who benefits and how?
+      placeholder: "As a <persona>, I need <capability> because <reason>."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the feature in as much detail as you can.
+      placeholder: "A new dashboard panel that shows… / An API endpoint that accepts…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you considered other approaches? Why did you settle on this one?
+
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy & data minimisation impact
+      description: >
+        Statflow is a privacy-first platform. Explain how this feature aligns with
+        cookieless design and minimal data collection — or why a trade-off is justified.
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References / prior art
+      description: Links to related issues, RFCs, competing implementations, or academic papers.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched the existing issues and this is not a duplicate.
+          required: true
+        - label: I have read the [Contributing guide](../../CONTRIBUTING.md).
+          required: true

@@ -1,0 +1,35 @@
+<!--
+    ClickHouse user profile overrides for local development.
+
+    Placed in /etc/clickhouse-server/users.d/ — merged with users.xml.
+
+    Relaxes query-level resource limits so exploratory ad-hoc queries during
+    development don't hit timeouts. Never deploy these settings to production.
+-->
+<clickhouse>
+    <profiles>
+        <default>
+            <!-- Allow larger result sets in dev -->
+            <max_result_rows>0</max_result_rows>
+            <max_result_bytes>0</max_result_bytes>
+
+            <!-- Generous timeout for slow exploratory queries -->
+            <max_execution_time>120</max_execution_time>
+
+            <!-- Reasonable memory cap per query -->
+            <max_memory_usage>536870912</max_memory_usage>
+
+            <!-- Allow DROP TABLE without special flags in dev -->
+            <allow_drop_detached>1</allow_drop_detached>
+
+            <!--
+                Never let the optimizer silently answer count()/aggregate queries
+                from an implicit projection: a freshly-ingested (un-merged) part
+                can be under-counted on read-after-write until a background merge
+                folds it into proj_by_page. Explicit projection use stays
+                available; correctness of base-table reads is guaranteed.
+            -->
+            <optimize_use_implicit_projections>0</optimize_use_implicit_projections>
+        </default>
+    </profiles>
+</clickhouse>

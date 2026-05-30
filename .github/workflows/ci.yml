@@ -1,0 +1,297 @@
+# Statflow CI
+#
+# This project's CI runs LOCALLY: `make ci` executes the entire quality gate
+# (polyglot lint, PHPStan/ECS/Rector/Deptrac, PHPUnit unit + integration,
+# frontend typecheck/lint/test/build, tracker test + size budget) on the
+# developer's machine via Docker — no cloud runner, no billed minutes.
+#
+# This workflow is therefore MANUAL-ONLY (`workflow_dispatch`): it never runs
+# on push or pull_request, so it consumes zero GitHub Actions minutes unless a
+# maintainer explicitly triggers it from the Actions tab. Do NOT add `push` or
+# `pull_request` triggers — billed-minute usage is a deliberate non-goal.
+# (On a public repository, Actions minutes are free; the local-first policy
+# still stands so contributors get the same gate with `make ci`.)
+
+name: CI
+
+on:
+  workflow_dispatch: {}
+
+# ---------------------------------------------------------------------------
+# LINT — infrastructure & config files
+# ---------------------------------------------------------------------------
+jobs:
+  lint:
+    name: Lint (infra / config)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # required by gitleaks history scan
+
+      # ---- Dockerfile linting ---------------------------------------------
+      - name: hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          recursive: true
+          config: .hadolint.yaml
+
+      # ---- YAML linting ---------------------------------------------------
+      - name: yamllint
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workdir:ro" \
+            -w /workdir \
+            pipelinecomponents/yamllint:0.31.0 \
+            -c .yamllint.yaml .
+
+      # ---- GitHub Actions linting -----------------------------------------
+      - name: actionlint
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/repo:ro" \
+            -w /repo \
+            rhysd/actionlint:1.7.7
+
+      # ---- Markdown linting -----------------------------------------------
+      - name: markdownlint
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workdir:ro" \
+            -w /workdir \
+            davidanson/markdownlint-cli2:v0.14.0 \
+            "**/*.md" "!**/node_modules/**" "!**/vendor/**" "!**/dist/**" "!**/build/**"
+
+      # ---- EditorConfig compliance ----------------------------------------
+      - name: editorconfig-checker
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/check:ro" \
+            -w /check \
+            mstruebing/editorconfig-checker:v3.0.3
+
+      # ---- Secret scanning ------------------------------------------------
+      - name: gitleaks
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/path:ro" \
+            ghcr.io/gitleaks/gitleaks:v8.24.0 \
+            detect --source=/path --verbose
+
+  # ---------------------------------------------------------------------------
+  # BACKEND — Symfony / PHP
+  #
+  # Steps are gated on the existence of apps/backend/composer.json.
+  # Once the app is scaffolded all steps activate automatically.
+  # ---------------------------------------------------------------------------
+  backend:
+    name: Backend (PHP / Symfony)
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Detect whether the backend has been scaffolded yet
+      - name: Check backend exists
+        id: backend-exists
+        run: |
+          if [ -f "apps/backend/composer.json" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::apps/backend not scaffolded yet — backend job steps skipped."
+          fi
+
+      # ---- Composer cache --------------------------------------------------
+      - name: Restore Composer cache
+        if: steps.backend-exists.outputs.present == 'true'
+        uses: actions/cache@v4
+        with:
+          path: apps/backend/vendor
+          key: composer-${{ hashFiles('apps/backend/composer.lock') }}
+          restore-keys: composer-
+
+      # ---- Dependency install ---------------------------------------------
+      - name: composer install
+        if: steps.backend-exists.outputs.present == 'true'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/apps/backend:/app" \
+            -w /app \
+            composer:2 \
+            composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+
+      # ---- Code style (ECS / PHP-CS-Fixer) --------------------------------
+      - name: ECS (code style)
+        if: steps.backend-exists.outputs.present == 'true'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/apps/backend:/app" \
+            -w /app \
+            php:8.3-cli \
+            vendor/bin/ecs check --no-progress-bar
+
+      # ---- Static analysis (PHPStan level 9) ------------------------------
+      - name: PHPStan
+        if: steps.backend-exists.outputs.present == 'true'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/apps/backend:/app" \
+            -w /app \
+            php:8.3-cli \
+            vendor/bin/phpstan analyse --no-progress
+
+      # ---- Automated refactoring check (Rector dry-run) -------------------
+      - name: Rector (dry-run)
+        if: steps.backend-exists.outputs.present == 'true'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/apps/backend:/app" \
+            -w /app \
+            php:8.3-cli \
+            vendor/bin/rector process --dry-run --no-progress-bar
+
+      # ---- Architecture boundaries (Deptrac) ------------------------------
+      - name: Deptrac
+        if: steps.backend-exists.outputs.present == 'true'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/apps/backend:/app" \
+            -w /app \
+            php:8.3-cli \
+            vendor/bin/deptrac analyse --no-progress
+
+      # ---- Unit & integration tests (PHPUnit) -----------------------------
+      - name: PHPUnit
+        if: steps.backend-exists.outputs.present == 'true'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/apps/backend:/app" \
+            -w /app \
+            php:8.3-cli \
+            vendor/bin/phpunit --no-progress
+
+  # ---------------------------------------------------------------------------
+  # FRONTEND — Vue 3 / TypeScript
+  #
+  # Steps are gated on the existence of apps/frontend/package.json.
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: Frontend (Vue 3 / TS)
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Detect whether the frontend has been scaffolded yet
+      - name: Check frontend exists
+        id: frontend-exists
+        run: |
+          if [ -f "apps/frontend/package.json" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::apps/frontend not scaffolded yet — frontend job steps skipped."
+          fi
+
+      # ---- pnpm setup & cache ---------------------------------------------
+      - name: Setup pnpm
+        if: steps.frontend-exists.outputs.present == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        if: steps.frontend-exists.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: pnpm install
+        if: steps.frontend-exists.outputs.present == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # ---- ESLint ----------------------------------------------------------
+      - name: ESLint
+        if: steps.frontend-exists.outputs.present == 'true'
+        run: pnpm --filter @statflow/frontend lint
+
+      # ---- TypeScript type-check (vue-tsc) --------------------------------
+      - name: vue-tsc
+        if: steps.frontend-exists.outputs.present == 'true'
+        run: pnpm --filter @statflow/frontend typecheck
+
+      # ---- Unit tests (Vitest) --------------------------------------------
+      - name: Vitest
+        if: steps.frontend-exists.outputs.present == 'true'
+        run: pnpm --filter @statflow/frontend test:unit --run
+
+      # ---- Production build -----------------------------------------------
+      - name: Build
+        if: steps.frontend-exists.outputs.present == 'true'
+        run: pnpm --filter @statflow/frontend build
+
+  # ---------------------------------------------------------------------------
+  # TRACKER — vanilla TS bundle (<2 KB)
+  #
+  # Steps are gated on the existence of packages/tracker/package.json.
+  # ---------------------------------------------------------------------------
+  tracker:
+    name: Tracker (TS bundle)
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Detect whether the tracker has been scaffolded yet
+      - name: Check tracker exists
+        id: tracker-exists
+        run: |
+          if [ -f "packages/tracker/package.json" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::packages/tracker not scaffolded yet — tracker job steps skipped."
+          fi
+
+      # ---- pnpm setup & cache (shared with frontend job if co-located) ----
+      - name: Setup pnpm
+        if: steps.tracker-exists.outputs.present == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        if: steps.tracker-exists.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: pnpm install
+        if: steps.tracker-exists.outputs.present == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # ---- ESLint ----------------------------------------------------------
+      - name: ESLint (tracker)
+        if: steps.tracker-exists.outputs.present == 'true'
+        run: pnpm --filter @statflow/tracker lint
+
+      # ---- Unit tests (Vitest) --------------------------------------------
+      - name: Vitest (tracker)
+        if: steps.tracker-exists.outputs.present == 'true'
+        run: pnpm --filter @statflow/tracker test --run
+
+      # ---- Bundle size guard (<2 KB gzipped) ------------------------------
+      - name: size-limit
+        if: steps.tracker-exists.outputs.present == 'true'
+        run: pnpm --filter @statflow/tracker size-limit

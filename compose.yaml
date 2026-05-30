@@ -1,0 +1,334 @@
+# =============================================================================
+# Statflow — Docker Compose stack
+#
+# Usage:
+#   docker compose up -d                      # base stack (backend, frontend, data stores)
+#   docker compose --profile observability up # base + OTel / Prometheus / Grafana
+#
+# All credentials are read from .env (copy .env.example → .env and adjust).
+# Source directories (apps/backend, apps/frontend, packages) are bind-mounted
+# for hot-reload in development. Data volumes are named so they survive
+# `docker compose down` — use `docker compose down -v` to wipe them.
+# =============================================================================
+
+name: statflow
+
+# ---------------------------------------------------------------------------
+# Shared extension fragments (YAML anchors)
+# ---------------------------------------------------------------------------
+x-restart-policy: &restart-unless-stopped
+  restart: unless-stopped
+
+x-logging: &default-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
+services:
+
+  # ── Backend: FrankenPHP + Symfony ──────────────────────────────────────────
+  backend:
+    <<: [*restart-unless-stopped, *default-logging]
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+      target: dev
+    image: statflow/backend:dev
+    container_name: statflow-backend
+    environment:
+      APP_ENV:              "${APP_ENV:-dev}"
+      APP_SECRET:           "${APP_SECRET}"
+      SERVER_NAME:          ":80"
+      FRANKENPHP_WORKERS:   "${FRANKENPHP_WORKERS:-4}"
+      # PostgreSQL (application data)
+      DATABASE_URL:         "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?serverVersion=16&charset=utf8"
+      # ClickHouse (analytical data)
+      CLICKHOUSE_DSN:       "http://${CLICKHOUSE_USER}:${CLICKHOUSE_PASSWORD}@clickhouse:8123/${CLICKHOUSE_DB}"
+      # Redis (ingestion buffer + cache)
+      REDIS_URL:            "redis://:${REDIS_PASSWORD}@redis:6379"
+      # OTel exporter (only active when the observability profile is up)
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
+      OTEL_SERVICE_NAME:    "statflow-backend"
+      CORS_ALLOW_ORIGIN:    "${CORS_ALLOW_ORIGIN:-*}"
+      # OPcache: revalidate files on change in dev
+      OPCACHE_REVALIDATE_FREQ: "2"
+    volumes:
+      # Bind-mount source — enables hot-reload without image rebuild
+      - ./apps/backend:/app:rw,cached
+      # The /app bind shadows the image-baked Caddyfile, so mount it explicitly
+      # for dev (prod uses the baked copy with no source bind).
+      - ./docker/backend/backend.Caddyfile:/app/Caddyfile:ro
+      # Persist Composer cache across container restarts
+      - composer-cache:/home/statflow/.composer/cache
+    ports:
+      - "${BACKEND_PORT:-8000}:80"
+      # Caddy admin / metrics
+      - "127.0.0.1:2019:2019"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - statflow
+
+  # ── Frontend: Vue 3 + Vite dev server ─────────────────────────────────────
+  frontend:
+    <<: [*restart-unless-stopped, *default-logging]
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+      target: dev
+    image: statflow/frontend:dev
+    container_name: statflow-frontend
+    environment:
+      # Vite exposes these as import.meta.env.VITE_* inside the SPA
+      VITE_API_BASE_URL:  "${VITE_API_BASE_URL:-http://localhost:8000}"
+      VITE_APP_VERSION:   "${VITE_APP_VERSION:-0.1.0-dev}"
+    working_dir: /app
+    # Run as the host owner uid (1000) so workspace installs and the Vite dev
+    # cache write cleanly to the bind-mounted tree without ownership clashes.
+    user: "1000:1000"
+    # The workspace root has no "dev" script — start the frontend package's
+    # Vite dev server, bound to 0.0.0.0 so it is reachable from the host.
+    command: ["pnpm", "--filter", "@statflow/frontend", "dev", "--host", "0.0.0.0"]
+    volumes:
+      # Bind-mount the full monorepo so pnpm workspaces resolve from the root
+      # (pnpm-workspace.yaml + root package.json + the shared lockfile).
+      - .:/app:rw,cached
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    healthcheck:
+      # node:bookworm-slim ships no wget/curl; use Node's global fetch instead.
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://localhost:5173/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    networks:
+      - statflow
+
+  # ── ClickHouse: analytical datastore ─────────────────────────────────────
+  clickhouse:
+    <<: [*restart-unless-stopped, *default-logging]
+    image: clickhouse/clickhouse-server:24-alpine
+    container_name: statflow-clickhouse
+    environment:
+      CLICKHOUSE_DB:       "${CLICKHOUSE_DB:-statflow}"
+      CLICKHOUSE_USER:     "${CLICKHOUSE_USER:-statflow}"
+      CLICKHOUSE_PASSWORD: "${CLICKHOUSE_PASSWORD}"
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+      # Schema init — runs once on first start
+      - ./docker/clickhouse/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+      # Low-memory dev settings
+      - ./docker/clickhouse/config-dev.xml:/etc/clickhouse-server/config.d/dev.xml:ro
+      - ./docker/clickhouse/users-dev.xml:/etc/clickhouse-server/users.d/dev.xml:ro
+    ports:
+      - "${CLICKHOUSE_HTTP_PORT:-8123}:8123"
+      - "${CLICKHOUSE_NATIVE_PORT:-9000}:9000"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      # Use 127.0.0.1 explicitly — ClickHouse binds IPv4 only and
+      # `localhost` may resolve to ::1 first in some container environments.
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - statflow
+
+  # ── PostgreSQL: application datastore ────────────────────────────────────
+  postgres:
+    <<: [*restart-unless-stopped, *default-logging]
+    image: postgres:16-alpine
+    container_name: statflow-postgres
+    environment:
+      POSTGRES_DB:       "${POSTGRES_DB:-statflow}"
+      POSTGRES_USER:     "${POSTGRES_USER:-statflow}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      # Tuning for a dev laptop — conservative shared_buffers
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    command: >
+      postgres
+        -c shared_buffers=128MB
+        -c effective_cache_size=512MB
+        -c work_mem=4MB
+        -c maintenance_work_mem=64MB
+        -c checkpoint_completion_target=0.9
+        -c wal_buffers=16MB
+        -c max_connections=50
+        -c log_min_duration_statement=500
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-statflow} -d ${POSTGRES_DB:-statflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - statflow
+
+  # ── Redis: ingestion buffer + application cache ───────────────────────────
+  redis:
+    <<: [*restart-unless-stopped, *default-logging]
+    image: redis:7-alpine
+    container_name: statflow-redis
+    command: >
+      redis-server
+        --requirepass ${REDIS_PASSWORD}
+        --maxmemory 256mb
+        --maxmemory-policy allkeys-lru
+        --appendonly yes
+        --appendfsync everysec
+        --save 3600 1 300 100 60 10000
+    volumes:
+      - redis-data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=${REDIS_PASSWORD} redis-cli --no-auth-warning ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - statflow
+
+  # ==========================================================================
+  # Observability stack — activate with:  docker compose --profile observability up
+  # ==========================================================================
+
+  # ── OpenTelemetry Collector ───────────────────────────────────────────────
+  otel-collector:
+    <<: [*restart-unless-stopped, *default-logging]
+    profiles: [observability]
+    image: otel/opentelemetry-collector-contrib:0.105.0
+    container_name: statflow-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./docker/observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:13133/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - statflow
+
+  # ── Prometheus ────────────────────────────────────────────────────────────
+  prometheus:
+    <<: [*restart-unless-stopped, *default-logging]
+    profiles: [observability]
+    image: prom/prometheus:v2.53.0
+    container_name: statflow-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./docker/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - statflow
+
+  # ── Grafana ───────────────────────────────────────────────────────────────
+  grafana:
+    <<: [*restart-unless-stopped, *default-logging]
+    profiles: [observability]
+    image: grafana/grafana-oss:11.1.0
+    container_name: statflow-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER:     "${GRAFANA_ADMIN_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-statflow_grafana_dev}"
+      GF_USERS_ALLOW_SIGN_UP:     "false"
+      GF_SERVER_ROOT_URL:         "http://localhost:${GRAFANA_PORT:-3000}"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - statflow
+
+# ---------------------------------------------------------------------------
+# Named volumes
+# ---------------------------------------------------------------------------
+volumes:
+  postgres-data:
+    driver: local
+  clickhouse-data:
+    driver: local
+  clickhouse-logs:
+    driver: local
+  redis-data:
+    driver: local
+  composer-cache:
+    driver: local
+  frontend-node-modules:
+    driver: local
+  packages-node-modules:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+# ---------------------------------------------------------------------------
+# Networks
+# ---------------------------------------------------------------------------
+networks:
+  statflow:
+    driver: bridge
+    name: statflow_network
