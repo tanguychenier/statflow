@@ -54,7 +54,7 @@
     "@storybook/vue3": "^8.4.7",
     "@storybook/vue3-vite": "^8.4.7",
     "@stryker-mutator/core": "^8.7.1",
-    "@stryker-mutator/vitest-runner": "^8.7.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.5.2",
     "@testing-library/vue": "^8.1.0",
