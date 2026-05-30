@@ -398,7 +398,8 @@ test-tracker: ## Run Vitest for the tracker package
 ci: ## Run the FULL quality gate on this machine — the project's CI (no GitHub Actions)
 	@echo -e "$(BOLD)$(CYAN)[CI 1/6] Polyglot repo lint…$(RESET)"
 	@$(MAKE) lint
-	@echo -e "$(BOLD)$(CYAN)[CI 2/6] Data services + test database…$(RESET)"
+	@echo -e "$(BOLD)$(CYAN)[CI 2/6] Secrets, data services, and test database…$(RESET)"
+	@$(MAKE) secrets
 	@$(MAKE) up-data
 	@$(MAKE) db-test-setup
 	@echo -e "$(BOLD)$(CYAN)[CI 3/6] Backend — ECS, PHPStan, Rector, Deptrac…$(RESET)"
