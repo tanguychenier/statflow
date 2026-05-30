@@ -1,0 +1,19 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    # Stateless API (ADR-0009): authentication is a short-lived ES256 access token
+    # plus a rotating HttpOnly refresh-token cookie validated against Redis — there
+    # is no server-side PHP session.
+    session: false
+
+    # The tracker posts events without credentials and reads them across origins;
+    # CORS for the dashboard SPA is terminated at the reverse proxy (Caddy).
+    http_method_override: false
+    handle_all_throwables: true
+    php_errors:
+        log: true
+
+when@test:
+    framework:
+        test: true

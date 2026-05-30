@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Identity\Domain\Model\Team" table="teams">
+        <id name="id" type="guid" column="id">
+            <generator strategy="NONE"/>
+        </id>
+        <field name="name" type="string" column="name" length="255"/>
+        <field name="slug" type="string" column="slug" length="63"/>
+        <field name="ownerId" type="guid" column="owner_id"/>
+        <field name="isPersonal" type="boolean" column="is_personal"/>
+        <field name="plan" type="string" column="plan" length="32"/>
+        <field name="planExpiresAt" type="datetime_immutable" column="plan_expires_at" nullable="true"/>
+        <field name="stripeCustomerId" type="text" column="stripe_customer_id" nullable="true"/>
+        <field name="monthlyEventQuota" type="bigint" column="monthly_event_quota"/>
+        <field name="monthlyEventUsed" type="bigint" column="monthly_event_used"/>
+        <field name="createdAt" type="datetime_immutable" column="created_at"/>
+        <field name="updatedAt" type="datetime_immutable" column="updated_at"/>
+        <field name="deletedAt" type="datetime_immutable" column="deleted_at" nullable="true"/>
+    </entity>
+</doctrine-mapping>

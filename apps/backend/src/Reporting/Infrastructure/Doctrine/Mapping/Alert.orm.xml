@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Reporting\Domain\Model\Alert" table="alerts">
+        <id name="id" type="guid" column="id">
+            <generator strategy="NONE"/>
+        </id>
+        <field name="siteId" type="guid" column="site_id"/>
+        <field name="name" type="string" column="name" length="255"/>
+        <field name="createdBy" type="guid" column="created_by" nullable="true"/>
+        <field name="metric" type="string" column="metric" length="32"/>
+        <field name="condition" type="string" column="condition" length="32"/>
+        <field name="threshold" type="decimal" column="threshold" precision="18" scale="4"/>
+        <field name="comparisonPeriod" type="string" column="comparison_period" length="32" nullable="true"/>
+        <field name="filters" type="json" column="filters"/>
+        <field name="notificationChannels" type="json" column="notification_channels"/>
+        <field name="isActive" type="boolean" column="is_active"/>
+        <field name="lastTriggeredAt" type="datetime_immutable" column="last_triggered_at" nullable="true"/>
+        <field name="createdAt" type="datetime_immutable" column="created_at"/>
+        <field name="updatedAt" type="datetime_immutable" column="updated_at"/>
+        <field name="deletedAt" type="datetime_immutable" column="deleted_at" nullable="true"/>
+    </entity>
+</doctrine-mapping>

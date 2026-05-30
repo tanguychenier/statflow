@@ -1,0 +1,4 @@
+[sqlfluff]
+# Path-level override: PostgreSQL dialect for Doctrine migrations.
+# Inherits all other settings from the root .sqlfluff.
+dialect = postgres

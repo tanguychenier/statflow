@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Reporting\Domain\Model\Export" table="exports">
+        <id name="id" type="guid" column="id">
+            <generator strategy="NONE"/>
+        </id>
+        <field name="siteId" type="guid" column="site_id"/>
+        <field name="status" type="string" column="status" length="16"/>
+        <field name="format" type="string" column="format" length="16"/>
+        <field name="query" type="json" column="query"/>
+        <field name="notifyEmail" type="string" column="notify_email" length="254" nullable="true"/>
+        <field name="createdBy" type="guid" column="created_by" nullable="true"/>
+        <field name="rowCount" type="integer" column="row_count" nullable="true"/>
+        <field name="fileSizeBytes" type="bigint" column="file_size_bytes" nullable="true"/>
+        <field name="artifactKey" type="string" column="artifact_key" length="512" nullable="true"/>
+        <field name="expiresAt" type="datetime_immutable" column="expires_at" nullable="true"/>
+        <field name="errorMessage" type="text" column="error_message" nullable="true"/>
+        <field name="createdAt" type="datetime_immutable" column="created_at"/>
+        <field name="completedAt" type="datetime_immutable" column="completed_at" nullable="true"/>
+    </entity>
+</doctrine-mapping>

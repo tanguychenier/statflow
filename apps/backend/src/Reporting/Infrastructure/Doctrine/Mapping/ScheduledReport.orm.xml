@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Reporting\Domain\Model\ScheduledReport" table="scheduled_reports">
+        <id name="id" type="guid" column="id">
+            <generator strategy="NONE"/>
+        </id>
+        <field name="siteId" type="guid" column="site_id"/>
+        <field name="savedReportId" type="guid" column="saved_report_id" nullable="true"/>
+        <field name="name" type="string" column="name" length="255"/>
+        <field name="recipients" type="json" column="recipients"/>
+        <field name="scheduleCron" type="string" column="schedule_cron" length="100"/>
+        <field name="timezone" type="string" column="timezone" length="64"/>
+        <field name="isActive" type="boolean" column="is_active"/>
+        <field name="createdBy" type="guid" column="created_by" nullable="true"/>
+        <field name="lastSentAt" type="datetime_immutable" column="last_sent_at" nullable="true"/>
+        <field name="nextSendAt" type="datetime_immutable" column="next_send_at" nullable="true"/>
+        <field name="createdAt" type="datetime_immutable" column="created_at"/>
+        <field name="updatedAt" type="datetime_immutable" column="updated_at"/>
+        <field name="deletedAt" type="datetime_immutable" column="deleted_at" nullable="true"/>
+    </entity>
+</doctrine-mapping>

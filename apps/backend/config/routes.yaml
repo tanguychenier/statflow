@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../vendor/symfony/routing/Loader/schema/routing.schema.json
+
+# Route discovery — picks up all #[Route] attributes from controllers in src/.
+# Each bounded context's controllers live in its Infrastructure/Http/Controller/ directory.
+controllers:
+    resource:
+        path: '../src/'
+        namespace: 'App'
+    type: attribute

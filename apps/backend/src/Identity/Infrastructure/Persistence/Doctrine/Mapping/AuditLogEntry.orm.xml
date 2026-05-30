@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Identity\Domain\Model\AuditLogEntry" table="audit_log">
+        <id name="id" type="bigint" column="id">
+            <generator strategy="IDENTITY"/>
+        </id>
+        <field name="teamId" type="guid" column="team_id" nullable="true"/>
+        <field name="actorId" type="guid" column="actor_id" nullable="true"/>
+        <field name="actorEmail" type="text" column="actor_email" nullable="true"/>
+        <field name="action" type="string" column="action" length="128"/>
+        <field name="resourceType" type="string" column="resource_type" length="64" nullable="true"/>
+        <field name="resourceId" type="text" column="resource_id" nullable="true"/>
+        <field name="payload" type="json" column="payload" nullable="true"/>
+        <field name="ipAddress" type="string" column="ip_address" length="45" nullable="true"/>
+        <field name="userAgent" type="text" column="user_agent" nullable="true"/>
+        <field name="createdAt" type="datetime_immutable" column="created_at"/>
+    </entity>
+</doctrine-mapping>

@@ -1,0 +1,169 @@
+# Deptrac — enforces hexagonal architecture layer boundaries.
+#
+# Rule summary:
+#   Domain     → nothing (pure PHP, no framework, no infrastructure)
+#   Application → Domain only
+#   Infrastructure → Application + Domain + allowed external libs
+#
+# Cross-context communication is permitted only through Shared\Domain contracts.
+# No context may import Domain entities or repositories from another context.
+
+deptrac:
+    paths:
+        - src
+
+    layers:
+        # ── Shared ────────────────────────────────────────────────────────────
+        - name: SharedDomain
+          collectors:
+              - type: className
+                regex: ^App\\Shared\\Domain\\.*
+
+        - name: SharedInfrastructure
+          collectors:
+              - type: className
+                regex: ^App\\Shared\\Infrastructure\\.*
+
+        # ── Ingestion ─────────────────────────────────────────────────────────
+        - name: IngestionDomain
+          collectors:
+              - type: className
+                regex: ^App\\Ingestion\\Domain\\.*
+
+        - name: IngestionApplication
+          collectors:
+              - type: className
+                regex: ^App\\Ingestion\\Application\\.*
+
+        - name: IngestionInfrastructure
+          collectors:
+              - type: className
+                regex: ^App\\Ingestion\\Infrastructure\\.*
+
+        # ── Analytics ─────────────────────────────────────────────────────────
+        - name: AnalyticsDomain
+          collectors:
+              - type: className
+                regex: ^App\\Analytics\\Domain\\.*
+
+        - name: AnalyticsApplication
+          collectors:
+              - type: className
+                regex: ^App\\Analytics\\Application\\.*
+
+        - name: AnalyticsInfrastructure
+          collectors:
+              - type: className
+                regex: ^App\\Analytics\\Infrastructure\\.*
+
+        # ── Identity ──────────────────────────────────────────────────────────
+        - name: IdentityDomain
+          collectors:
+              - type: className
+                regex: ^App\\Identity\\Domain\\.*
+
+        - name: IdentityApplication
+          collectors:
+              - type: className
+                regex: ^App\\Identity\\Application\\.*
+
+        - name: IdentityInfrastructure
+          collectors:
+              - type: className
+                regex: ^App\\Identity\\Infrastructure\\.*
+
+        # ── Sites ─────────────────────────────────────────────────────────────
+        - name: SitesDomain
+          collectors:
+              - type: className
+                regex: ^App\\Sites\\Domain\\.*
+
+        - name: SitesApplication
+          collectors:
+              - type: className
+                regex: ^App\\Sites\\Application\\.*
+
+        - name: SitesInfrastructure
+          collectors:
+              - type: className
+                regex: ^App\\Sites\\Infrastructure\\.*
+
+        # ── Reporting ─────────────────────────────────────────────────────────
+        - name: ReportingDomain
+          collectors:
+              - type: className
+                regex: ^App\\Reporting\\Domain\\.*
+
+        - name: ReportingApplication
+          collectors:
+              - type: className
+                regex: ^App\\Reporting\\Application\\.*
+
+        - name: ReportingInfrastructure
+          collectors:
+              - type: className
+                regex: ^App\\Reporting\\Infrastructure\\.*
+
+    ruleset:
+        # Shared Domain has no outbound dependencies (except PHP itself)
+        SharedDomain: []
+
+        # Shared Infrastructure may depend on Shared Domain
+        SharedInfrastructure:
+            - SharedDomain
+
+        # Domain layers depend only on Shared Domain
+        IngestionDomain:
+            - SharedDomain
+        AnalyticsDomain:
+            - SharedDomain
+        IdentityDomain:
+            - SharedDomain
+        SitesDomain:
+            - SharedDomain
+        ReportingDomain:
+            - SharedDomain
+
+        # Application layers depend on their own Domain and Shared Domain
+        IngestionApplication:
+            - IngestionDomain
+            - SharedDomain
+        AnalyticsApplication:
+            - AnalyticsDomain
+            - SharedDomain
+        IdentityApplication:
+            - IdentityDomain
+            - SharedDomain
+        SitesApplication:
+            - SitesDomain
+            - SharedDomain
+        ReportingApplication:
+            - ReportingDomain
+            - SharedDomain
+
+        # Infrastructure layers depend on their own Application + Domain + Shared
+        IngestionInfrastructure:
+            - IngestionApplication
+            - IngestionDomain
+            - SharedDomain
+            - SharedInfrastructure
+        AnalyticsInfrastructure:
+            - AnalyticsApplication
+            - AnalyticsDomain
+            - SharedDomain
+            - SharedInfrastructure
+        IdentityInfrastructure:
+            - IdentityApplication
+            - IdentityDomain
+            - SharedDomain
+            - SharedInfrastructure
+        SitesInfrastructure:
+            - SitesApplication
+            - SitesDomain
+            - SharedDomain
+            - SharedInfrastructure
+        ReportingInfrastructure:
+            - ReportingApplication
+            - ReportingDomain
+            - SharedDomain
+            - SharedInfrastructure

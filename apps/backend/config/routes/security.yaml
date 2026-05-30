@@ -1,0 +1,3 @@
+# The API is stateless (token-based, ADR-0009). There is no form-login firewall
+# and therefore no security logout route loader to import. Auth lifecycle
+# (login/logout/refresh) is handled by the Identity AuthController endpoints.

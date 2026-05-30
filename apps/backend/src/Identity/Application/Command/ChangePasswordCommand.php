@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of Statflow.
+ *
+ * (c) Tanguy Chénier <tanguychenier@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Identity\Application\Command;
+
+use App\Identity\Domain\ValueObject\AuditContext;
+
+final readonly class ChangePasswordCommand
+{
+    public function __construct(
+        public string $userId,
+        public string $currentPassword,
+        public string $newPassword,
+        public AuditContext $auditContext,
+    ) {
+    }
+}

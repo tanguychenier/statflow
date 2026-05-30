@@ -1,0 +1,82 @@
+security:
+    # Passwords are hashed by the Identity context's own BcryptPasswordHasher
+    # (ADR-0009), not the security component; no password_hashers entry is needed.
+
+    providers:
+        # The bearer authenticator builds the AuthenticatedUser itself from the JWT
+        # claims / API-key row via the UserBadge loader, so no stateful provider is
+        # consulted. This in-memory provider only satisfies the firewall contract.
+        api_users:
+            memory: ~
+
+    firewalls:
+        dev:
+            pattern: ^/(_profiler|_wdt)/
+            security: false
+
+        # Ingestion is authenticated by the public site_key in the request body
+        # (ADR-0009 §1), validated inside the Ingestion handler — never by a
+        # firewall. The endpoints are therefore anonymous at the HTTP layer.
+        ingestion:
+            pattern: ^/api/v1/events
+            stateless: true
+            security: false
+
+        # Public auth + service endpoints: login/register/refresh/forgot/reset,
+        # the JWKS document, and signed export downloads. No bearer required.
+        public:
+            pattern: ^/api/v1/(auth|exports/download)
+            stateless: true
+            security: false
+
+        # Sites and Reporting CRUD (every route lives under /api/v1/sites). Same
+        # bearer credential as the rest of the dashboard API; carved out as its own
+        # firewall so the controller integration tests can run it anonymously with
+        # a fixed acting user (overridden to security:false under test).
+        sites_crud:
+            pattern: ^/api/v1/sites
+            stateless: true
+            provider: api_users
+            custom_authenticators:
+                - App\Identity\Infrastructure\Security\BearerTokenAuthenticator
+
+        # Everything else under the API requires a bearer credential: a short-lived
+        # ES256 access token (dashboard) or a secret sfk_ programmatic key.
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: api_users
+            custom_authenticators:
+                - App\Identity\Infrastructure\Security\BearerTokenAuthenticator
+
+        # Health/readiness probes and any non-API route are open.
+        main:
+            lazy: true
+            provider: api_users
+
+    access_control:
+        - { path: ^/healthz, roles: PUBLIC_ACCESS }
+        - { path: ^/readyz, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/auth, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/events, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/exports/download, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: ROLE_USER }
+
+when@test:
+    security:
+        firewalls:
+            # The Sites/Reporting CRUD controller tests resolve the acting user
+            # through FixedActingUserResolver instead of the bearer firewall, so
+            # this surface runs anonymously under test (disabling the firewall also
+            # disables its access_control enforcement). The dashboard bearer flow
+            # (/users/me) stays behind the `api` firewall.
+            sites_crud:
+                pattern: ^/api/v1/sites
+                stateless: true
+                security: false
+
+            api:
+                stateless: true
+                provider: api_users
+                custom_authenticators:
+                    - App\Identity\Infrastructure\Security\BearerTokenAuthenticator

@@ -1,0 +1,63 @@
+framework:
+    messenger:
+        # Three dedicated buses (ADR-0004 hexagonal CQRS):
+        #   command.bus — write side, one handler per command, validation middleware
+        #   query.bus   — read side, one handler returns a result (HandleTrait)
+        #   event.bus   — integration events, fan-out, may have zero handlers
+        # Messenger aliases each bus to its camelCase argument name, so a service
+        # constructor typed `MessageBusInterface $commandBus` receives command.bus.
+        default_bus: command.bus
+
+        buses:
+            command.bus:
+                middleware:
+                    - validation
+            query.bus:
+                middleware: []
+            event.bus:
+                default_middleware:
+                    enabled: true
+                    allow_no_handlers: true
+
+        transports:
+            # Async worker queue (Redis Streams) for deferred Reporting/Sites jobs:
+            # export generation, scheduled-report delivery, post-deletion data purge.
+            # The high-throughput event ingestion buffer is a *separate*, bespoke
+            # Redis stream (events:raw) owned by the Ingestion context, not a
+            # Messenger transport.
+            async:
+                dsn: '%env(REDIS_URL)%'
+                options:
+                    stream: statflow:jobs
+                    group: statflow_jobs
+                    consumer: '%env(default:app_messenger_consumer:MESSENGER_CONSUMER)%'
+                    auto_setup: true
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+
+            failed: 'doctrine://default?queue_name=failed'
+            sync: 'sync://'
+
+        failure_transport: failed
+
+        routing:
+            # Deferred jobs run on the async worker.
+            App\Reporting\Infrastructure\Messenger\ExportRequested: async
+            App\Reporting\Infrastructure\Messenger\ScheduledReportDue: async
+            App\Sites\Infrastructure\Messenger\SiteDataDeletionRequested: async
+
+when@test:
+    framework:
+        messenger:
+            # Tests run every message inline so handler errors surface to the
+            # request and assertions see the persisted result immediately.
+            transports:
+                async: 'sync://'
+
+when@dev:
+    framework:
+        messenger:
+            transports:
+                async: 'sync://'

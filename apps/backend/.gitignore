@@ -1,0 +1,29 @@
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+# The root .gitignore has a bare '.env' pattern (no slash) that would otherwise
+# suppress this file at any depth. apps/backend/.env is the Symfony-standard
+# committed defaults file (APP_SECRET is intentionally empty — no real secret).
+# Negate the root pattern here so it remains trackable.
+!.env
+
+# Real-secret env overrides — gitignored by the root '.env.*' pattern already,
+# but listed here explicitly so the intent is clear at the app level.
+.env.dev
+.env.test
+
+# Deptrac analysis cache — not covered by root .gitignore
+.deptrac.cache

@@ -1,0 +1,83 @@
+doctrine:
+    dbal:
+        url: '%env(resolve:DATABASE_URL)%'
+        server_version: '16'
+        profiling_collect_backtrace: '%kernel.debug%'
+        use_savepoints: true
+
+        # Custom column types used by the persisted aggregates.
+        types:
+            statflow_uuid: App\Shared\Infrastructure\Doctrine\Type\UuidType
+            text_array: App\Identity\Infrastructure\Persistence\Doctrine\Type\TextArrayType
+            uuid_array: App\Identity\Infrastructure\Persistence\Doctrine\Type\UuidArrayType
+
+        # Map PostgreSQL native array types back to their custom Doctrine types on
+        # schema introspection so diff/validate stays stable.
+        mapping_types:
+            _text: text_array
+            _uuid: uuid_array
+
+    orm:
+        auto_generate_proxy_classes: true
+        enable_lazy_ghost_objects: true
+        report_fields_where_declared: true
+        validate_xml_mapping: true
+        naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+        identity_generation_preferences:
+            Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
+        auto_mapping: true
+        mappings:
+            # Identity context — users, teams, memberships, API keys, audit log,
+            # password-reset tokens. Persistence mapping lives in Infrastructure
+            # (XML) so the domain entities stay framework-agnostic (ADR-0004).
+            Identity:
+                type: xml
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Identity/Infrastructure/Persistence/Doctrine/Mapping'
+                prefix: 'App\Identity\Domain\Model'
+                alias: Identity
+            # Sites context — sites and their one-to-one settings. Persistence
+            # mapping lives in Infrastructure (XML) so the domain entities stay
+            # framework-agnostic (ADR-0004).
+            Sites:
+                type: xml
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Sites/Infrastructure/Persistence/Doctrine/Mapping'
+                prefix: 'App\Sites\Domain\Model'
+                alias: Sites
+            # Reporting context — saved reports, scheduled reports, alerts, exports.
+            # Persistence mapping lives in Infrastructure (XML) so the domain
+            # entities stay framework-agnostic (ADR-0004).
+            Reporting:
+                type: xml
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Reporting/Infrastructure/Doctrine/Mapping'
+                prefix: 'App\Reporting\Domain\Model'
+                alias: Reporting
+        controller_resolver:
+            auto_mapping: false
+
+when@test:
+    doctrine:
+        dbal:
+            dbname_suffix: '_test%env(default::TEST_TOKEN)%'
+
+when@prod:
+    doctrine:
+        orm:
+            auto_generate_proxy_classes: false
+            proxy_dir: '%kernel.build_dir%/doctrine/orm/Proxies'
+            query_cache_driver:
+                type: pool
+                pool: doctrine.system_cache_pool
+            result_cache_driver:
+                type: pool
+                pool: doctrine.result_cache_pool
+
+    framework:
+        cache:
+            pools:
+                doctrine.result_cache_pool:
+                    adapter: cache.app
+                doctrine.system_cache_pool:
+                    adapter: cache.system

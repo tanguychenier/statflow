@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Identity\Domain\Model\ApiKey" table="api_keys">
+        <id name="id" type="guid" column="id">
+            <generator strategy="NONE"/>
+        </id>
+        <field name="teamId" type="guid" column="team_id"/>
+        <field name="createdBy" type="guid" column="created_by" nullable="true"/>
+        <field name="name" type="string" column="name" length="255"/>
+        <field name="keyHash" type="text" column="key_hash"/>
+        <field name="keyPrefix" type="string" column="key_prefix" length="12"/>
+        <field name="scopes" type="text_array" column="scopes"/>
+        <field name="siteIds" type="uuid_array" column="site_ids"/>
+        <field name="lastUsedAt" type="datetime_immutable" column="last_used_at" nullable="true"/>
+        <field name="expiresAt" type="datetime_immutable" column="expires_at" nullable="true"/>
+        <field name="revokedAt" type="datetime_immutable" column="revoked_at" nullable="true"/>
+        <field name="createdAt" type="datetime_immutable" column="created_at"/>
+    </entity>
+</doctrine-mapping>

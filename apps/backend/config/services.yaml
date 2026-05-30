@@ -1,0 +1,326 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+parameters:
+    app.debug: '%kernel.debug%'
+
+    # Infrastructure connection strings (compose.yaml injects the real values).
+    app.clickhouse_dsn: '%env(CLICKHOUSE_DSN)%'
+
+    # Application secret, exposed as a parameter so the secrets below can fall back
+    # to it. The `default:` env processor validates its fallback parameter eagerly,
+    # so the fallback target must be a real parameter rather than the APP_SECRET
+    # env var name.
+    app_secret: '%env(APP_SECRET)%'
+
+    # Cookieless identity: per-install HKDF secret rotated daily into visitor/session
+    # salts (ADR-0008). Defaults to APP_SECRET so a fresh install still hashes.
+    app.identity_install_secret: '%env(default:app_secret:INSTALL_SECRET)%'
+
+    # ES256 access-token key material (ADR-0009). PEM strings live in the environment;
+    # an empty-string default keeps the container buildable before keys are provisioned.
+    app_empty: ''
+    app.jwt.private_key: '%env(default:app_empty:JWT_PRIVATE_KEY)%'
+    app.jwt.public_key: '%env(default:app_empty:JWT_PUBLIC_KEY)%'
+    app.jwt.key_id: '%env(default:app_jwt_default_kid:JWT_KEY_ID)%'
+
+    # Embedded MaxMind city database (100% local geo-IP; absent file degrades to
+    # GeoLocation::unknown() rather than failing the write).
+    app.geoip.database_path: '%env(default:app_geoip_default_path:GEOIP_DB_PATH)%'
+
+    # Local export artifact store (signed, expiring download links).
+    app.exports.directory: '%kernel.project_dir%/var/exports'
+    app.exports.signing_secret: '%env(default:app_secret:EXPORT_SIGNING_SECRET)%'
+
+    # Defaults resolved when the optional override env var is unset.
+    app_jwt_default_kid: 'statflow-es256'
+    app_geoip_default_path: '%kernel.project_dir%/var/geoip/GeoLite2-City.mmdb'
+    app_messenger_consumer: 'worker'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    # Auto-register every class under src/ as a service. Domain *services* are
+    # injected into handlers and stay registered; entities, value objects, domain
+    # events, exceptions and ports (interfaces) are excluded as they are never
+    # injectable. Unused message/DTO classes that remain are pruned by the
+    # container as unreferenced private services.
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Kernel.php'
+            - '../src/**/Domain/Model/'
+            - '../src/**/Domain/ValueObject/'
+            - '../src/**/Domain/Event/'
+            - '../src/**/Domain/Exception/'
+            - '../src/**/Domain/Port/'
+            - '../src/**/Domain/Query/'
+            - '../src/Shared/Domain/'
+            # The authenticated security principal is built with `new` by the
+            # bearer authenticator from its UserBadge — never autowired.
+            - '../src/Identity/Infrastructure/Security/AuthenticatedUser.php'
+
+    # ─── Message handlers ───────────────────────────────────────────────────────
+    # Application command/query handlers are invokable single-message classes
+    # (`__invoke(SomeCommand|SomeQuery): Result`). Tag them as Messenger handlers
+    # so the buses route by the invoke parameter type. Each message is dispatched
+    # on exactly one bus and handled by exactly one class, so the handlers are left
+    # bus-unrestricted. The three Reporting orchestrators below have no __invoke —
+    # they are driven by their Messenger wrappers / console commands, not a bus —
+    # so they are excluded from this tag and registered as plain services.
+    App\Identity\Application\Handler\:
+        resource: '../src/Identity/Application/Handler/'
+        tags: [{ name: messenger.message_handler }]
+
+    App\Sites\Application\Handler\:
+        resource: '../src/Sites/Application/Handler/'
+        tags: [{ name: messenger.message_handler }]
+
+    # Analytics controllers invoke their query handlers directly (no bus), so the
+    # Analytics handlers stay plain autowired services — registering them as
+    # message handlers would also collide on the shared parameter types
+    # (AnalyticsQuery / Uuid). The Reporting→Analytics cross-context query bus
+    # contract (FetchExportRowsQuery / EvaluateMetricQuery) currently has no
+    # Analytics-side handler; see the report.
+
+    App\Reporting\Application\Handler\:
+        resource: '../src/Reporting/Application/Handler/'
+        exclude:
+            - '../src/Reporting/Application/Handler/EvaluateAlertsHandler.php'
+            - '../src/Reporting/Application/Handler/ProcessExportHandler.php'
+            - '../src/Reporting/Application/Handler/SendScheduledReportHandler.php'
+        tags: [{ name: messenger.message_handler }]
+
+    # ─── Shared bus adapters ────────────────────────────────────────────────────
+    # The three Messenger buses (command.bus / query.bus / event.bus) are aliased
+    # by Messenger to the matching camelCase argument name, so the adapters wire by
+    # constructor-argument convention without explicit binding.
+    App\Shared\Domain\Bus\Command\CommandBus:
+        alias: App\Shared\Infrastructure\Bus\MessengerCommandBus
+
+    App\Shared\Domain\Bus\Query\QueryBus:
+        alias: App\Shared\Infrastructure\Bus\MessengerQueryBus
+
+    App\Shared\Domain\Bus\Event\EventBus:
+        alias: App\Shared\Infrastructure\Bus\MessengerEventBus
+
+    App\Shared\Domain\Clock\Clock:
+        alias: App\Shared\Infrastructure\Clock\SystemClock
+
+    App\Shared\Domain\Trace\TraceIdProvider:
+        alias: App\Shared\Infrastructure\Trace\UlidTraceIdProvider
+
+    # ─── Predis client ──────────────────────────────────────────────────────────
+    predis.client:
+        class: Predis\Client
+        arguments:
+            - '%env(REDIS_URL)%'
+
+    Predis\ClientInterface:
+        alias: predis.client
+
+    # ─── Ingestion ──────────────────────────────────────────────────────────────
+    # Event buffer: Redis Streams (XADD events:raw), drained by the batch-writer
+    # worker. Not a Messenger transport — the codec/stream handling is bespoke.
+    App\Ingestion\Domain\Port\EventBufferPort:
+        alias: App\Ingestion\Infrastructure\Redis\RedisStreamEventBuffer
+
+    # Geo-IP: MaxMind embedded DB (NullGeoLocator is the test/no-DB fallback).
+    App\Ingestion\Infrastructure\Geo\MaxMindGeoLocator:
+        arguments:
+            $databasePath: '%app.geoip.database_path%'
+
+    App\Ingestion\Domain\Port\GeoLocatorPort:
+        alias: App\Ingestion\Infrastructure\Geo\MaxMindGeoLocator
+
+    App\Ingestion\Infrastructure\Salt\HkdfSaltProvider:
+        arguments:
+            $installSecret: '%app.identity_install_secret%'
+
+    App\Ingestion\Infrastructure\ClickHouse\ClickHouseEventWriter:
+        arguments:
+            $dsn: '%app.clickhouse_dsn%'
+
+    # ─── Analytics ──────────────────────────────────────────────────────────────
+    App\Analytics\Infrastructure\ClickHouse\HttpClickHouseClient:
+        arguments:
+            $dsn: '%app.clickhouse_dsn%'
+
+    App\Analytics\Domain\Port\ClickHouseClientPort:
+        alias: App\Analytics\Infrastructure\ClickHouse\HttpClickHouseClient
+
+    # Tag-aware query-result cache (per-site invalidation on ingestion flush).
+    App\Analytics\Infrastructure\Cache\TaggedQueryCache:
+        arguments:
+            $cache: '@cache.analytics'
+
+    App\Analytics\Domain\Port\QueryCachePort:
+        alias: App\Analytics\Infrastructure\Cache\TaggedQueryCache
+
+    # ─── Identity ─────────────────────────────────────────────────────────────—
+    App\Identity\Infrastructure\Token\Es256AccessTokenIssuer:
+        arguments:
+            $privateKeyPem: '%app.jwt.private_key%'
+            $keyId: '%app.jwt.key_id%'
+
+    App\Identity\Infrastructure\Token\Es256AccessTokenVerifier:
+        arguments:
+            $publicKeyPem: '%app.jwt.public_key%'
+
+    App\Identity\Infrastructure\Token\JwksProvider:
+        arguments:
+            $publicKeyPem: '%app.jwt.public_key%'
+            $keyId: '%app.jwt.key_id%'
+
+    # Concrete bcrypt hasher backing BcryptPasswordHasher (ADR-0009 §2).
+    Symfony\Component\PasswordHasher\PasswordHasherInterface:
+        class: Symfony\Component\PasswordHasher\Hasher\NativePasswordHasher
+        arguments:
+            $algorithm: !php/const PASSWORD_BCRYPT
+
+    # ─── Reporting ──────────────────────────────────────────────────────────────
+    # Real analytics gateway replays report queries over the query bus
+    # (NullAnalyticsQueryGateway is the offline fallback).
+    App\Reporting\Domain\Port\AnalyticsQueryGateway:
+        alias: App\Reporting\Infrastructure\Analytics\BusAnalyticsQueryGateway
+
+    App\Reporting\Infrastructure\Storage\LocalExportArtifactStorage:
+        arguments:
+            $baseDirectory: '%app.exports.directory%'
+            $signingSecret: '%app.exports.signing_secret%'
+
+    # ─── Shared HTTP ─────────────────────────────────────────────────────────────
+    App\Shared\Infrastructure\Http\ExceptionListener:
+        arguments:
+            $debug: '%app.debug%'
+        tags:
+            - { name: kernel.event_listener, event: kernel.exception, priority: -100 }
+
+    # ─── Port → adapter bindings (interfaces are excluded from autowiring) ───────
+    App\Analytics\Domain\Port\FunnelRepositoryPort:
+        alias: App\Analytics\Infrastructure\Persistence\Doctrine\DbalFunnelRepository
+    App\Analytics\Domain\Port\RealtimeCounterPort:
+        alias: App\Analytics\Infrastructure\Redis\RedisRealtimeCounter
+    App\Analytics\Domain\Port\SegmentRepositoryPort:
+        alias: App\Analytics\Infrastructure\Persistence\Doctrine\DbalSegmentRepository
+    App\Identity\Domain\Port\AccessTokenIssuer:
+        alias: App\Identity\Infrastructure\Token\Es256AccessTokenIssuer
+    App\Identity\Domain\Port\ApiKeyRepository:
+        alias: App\Identity\Infrastructure\Persistence\Doctrine\DoctrineApiKeyRepository
+    App\Identity\Domain\Port\AuditLogger:
+        alias: App\Identity\Infrastructure\Audit\DoctrineAuditLogger
+    App\Identity\Domain\Port\IdentityMailer:
+        alias: App\Identity\Infrastructure\Mail\LoggingIdentityMailer
+    App\Identity\Domain\Port\PasswordHasher:
+        alias: App\Identity\Infrastructure\Security\BcryptPasswordHasher
+    App\Identity\Domain\Port\PasswordResetTokenRepository:
+        alias: App\Identity\Infrastructure\Persistence\Doctrine\DoctrinePasswordResetTokenRepository
+    App\Identity\Domain\Port\RefreshTokenStore:
+        alias: App\Identity\Infrastructure\Redis\RedisRefreshTokenStore
+    App\Identity\Domain\Port\TeamMembershipRepository:
+        alias: App\Identity\Infrastructure\Persistence\Doctrine\DoctrineTeamMembershipRepository
+    App\Identity\Domain\Port\TeamRepository:
+        alias: App\Identity\Infrastructure\Persistence\Doctrine\DoctrineTeamRepository
+    App\Identity\Domain\Port\TokenGenerator:
+        alias: App\Identity\Infrastructure\Security\RandomTokenGenerator
+    App\Identity\Domain\Port\UserRepository:
+        alias: App\Identity\Infrastructure\Persistence\Doctrine\DoctrineUserRepository
+    App\Ingestion\Domain\Port\EventWriterPort:
+        alias: App\Ingestion\Infrastructure\ClickHouse\ClickHouseEventWriter
+    App\Ingestion\Domain\Port\IdempotencyStorePort:
+        alias: App\Ingestion\Infrastructure\Redis\RedisIdempotencyStore
+    App\Ingestion\Domain\Port\RateLimiterPort:
+        alias: App\Ingestion\Infrastructure\Redis\RedisRateLimiter
+    App\Ingestion\Domain\Port\SaltProviderPort:
+        alias: App\Ingestion\Infrastructure\Salt\HkdfSaltProvider
+    App\Ingestion\Domain\Port\SiteRepositoryPort:
+        alias: App\Ingestion\Infrastructure\Persistence\Doctrine\DbalSiteRepository
+    App\Reporting\Domain\Port\AlertRepository:
+        alias: App\Reporting\Infrastructure\Doctrine\DoctrineAlertRepository
+    App\Reporting\Domain\Port\Clock:
+        alias: App\Reporting\Infrastructure\Clock\SystemClock
+    App\Reporting\Domain\Port\ExportArtifactStorage:
+        alias: App\Reporting\Infrastructure\Storage\LocalExportArtifactStorage
+    App\Reporting\Domain\Port\ExportJobDispatcher:
+        alias: App\Reporting\Infrastructure\Messenger\MessengerExportJobDispatcher
+    App\Reporting\Domain\Port\ExportRepository:
+        alias: App\Reporting\Infrastructure\Doctrine\DoctrineExportRepository
+    App\Reporting\Domain\Port\ReportMailer:
+        alias: App\Reporting\Infrastructure\Mailer\NullReportMailer
+    App\Reporting\Domain\Port\SavedReportRepository:
+        alias: App\Reporting\Infrastructure\Doctrine\DoctrineSavedReportRepository
+    App\Reporting\Domain\Port\ScheduledReportRepository:
+        alias: App\Reporting\Infrastructure\Doctrine\DoctrineScheduledReportRepository
+    App\Reporting\Domain\Port\SiteAccessProvider:
+        alias: App\Reporting\Infrastructure\Doctrine\DoctrineSiteAccessProvider
+    App\Sites\Domain\Port\Clock:
+        alias: App\Sites\Infrastructure\Clock\SystemClock
+    App\Sites\Domain\Port\SiteDataDeletionScheduler:
+        alias: App\Sites\Infrastructure\Messenger\MessengerSiteDataDeletionScheduler
+    App\Sites\Domain\Port\SiteRepository:
+        alias: App\Sites\Infrastructure\Doctrine\DoctrineSiteRepository
+    App\Sites\Domain\Port\TeamMembershipProvider:
+        alias: App\Sites\Infrastructure\Doctrine\DoctrineTeamMembershipProvider
+    App\Sites\Domain\Port\TrackerKeyGenerator:
+        alias: App\Sites\Infrastructure\Security\RandomTrackerKeyGenerator
+
+when@test:
+    services:
+        _defaults:
+            autowire: true
+            autoconfigure: true
+            public: true
+
+        # Replace external adapters with in-memory stubs so WebTestCase can drive
+        # the full HTTP stack without Redis or ClickHouse.
+        App\Tests\Ingestion\Support\InMemoryEventBuffer: ~
+
+        App\Ingestion\Domain\Port\EventBufferPort:
+            alias: App\Tests\Ingestion\Support\InMemoryEventBuffer
+
+        # In-memory ingestion ports so the events HTTP endpoints can be exercised
+        # without Redis/PostgreSQL; the controller tests seed the fixture site on
+        # the in-memory repository directly.
+        App\Tests\Ingestion\Support\InMemorySiteRepository: ~
+
+        App\Ingestion\Domain\Port\SiteRepositoryPort:
+            alias: App\Tests\Ingestion\Support\InMemorySiteRepository
+
+        App\Tests\Ingestion\Support\InMemoryRateLimiter: ~
+
+        App\Ingestion\Domain\Port\RateLimiterPort:
+            alias: App\Tests\Ingestion\Support\InMemoryRateLimiter
+
+        App\Tests\Ingestion\Support\InMemoryIdempotencyStore: ~
+
+        App\Ingestion\Domain\Port\IdempotencyStorePort:
+            alias: App\Tests\Ingestion\Support\InMemoryIdempotencyStore
+
+        App\Tests\Stub\NullClickHouseClient: ~
+
+        App\Analytics\Domain\Port\ClickHouseClientPort:
+            alias: App\Tests\Stub\NullClickHouseClient
+
+        # No embedded geo DB under test: resolve to the no-op locator.
+        App\Ingestion\Domain\Port\GeoLocatorPort:
+            alias: App\Ingestion\Infrastructure\Geo\NullGeoLocator
+
+        # The Reporting->Analytics export/alert query contract has no Analytics-side
+        # bus handler in the isolated test wiring, so resolve the gateway to the
+        # inert Null adapter: exports produce an empty artifact and complete instead
+        # of failing on a missing handler.
+        App\Reporting\Domain\Port\AnalyticsQueryGateway:
+            alias: App\Reporting\Infrastructure\Analytics\NullAnalyticsQueryGateway
+
+        # Controller integration tests drive the Sites/Reporting CRUD surface with
+        # a fixed acting user instead of booting the bearer firewall.
+        App\Tests\Integration\Sites\Support\FixedActingUserResolver: ~
+
+        App\Sites\Infrastructure\Http\ActingUserResolver:
+            alias: App\Tests\Integration\Sites\Support\FixedActingUserResolver
+
+        App\Tests\Integration\Reporting\Support\FixedActingUserResolver: ~
+
+        App\Reporting\Infrastructure\Http\ActingUserResolver:
+            alias: App\Tests\Integration\Reporting\Support\FixedActingUserResolver

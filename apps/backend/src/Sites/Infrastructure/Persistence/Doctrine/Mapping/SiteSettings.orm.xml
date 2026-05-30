@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Sites\Domain\Model\SiteSettings" table="site_settings">
+        <id name="site" association-key="true"/>
+        <field name="allowedDomains" type="json" column="allowed_domains"/>
+        <field name="excludedIps" type="json" column="excluded_ips"/>
+        <field name="stripQueryParams" type="boolean" column="strip_query_params"/>
+        <field name="customDomainEnabled" type="boolean" column="custom_domain_enabled"/>
+        <field name="trackClicks" type="boolean" column="track_clicks"/>
+        <field name="trackScroll" type="boolean" column="track_scroll"/>
+        <field name="trackEngagementTime" type="boolean" column="track_engagement_time"/>
+        <field name="trackOutboundLinks" type="boolean" column="track_outbound_links"/>
+        <field name="hashBasedRouting" type="boolean" column="hash_based_routing"/>
+        <field name="ignoredSelectors" type="json" column="ignored_selectors"/>
+        <field name="samplingRate" type="decimal" column="sampling_rate" precision="4" scale="3"/>
+        <field name="scriptVariant" type="string" column="script_variant" length="32"/>
+        <field name="updatedAt" type="datetime_immutable" column="updated_at"/>
+        <one-to-one field="site" target-entity="App\Sites\Domain\Model\Site" inversed-by="settings">
+            <join-column name="site_id" referenced-column-name="id" on-delete="CASCADE"/>
+        </one-to-one>
+    </entity>
+</doctrine-mapping>

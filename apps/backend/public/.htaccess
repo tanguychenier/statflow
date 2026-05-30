@@ -1,0 +1,43 @@
+# =============================================================================
+# Statflow — Apache rewrite rules for self-hosted deployments.
+#
+# NOTE: The default and recommended server for Statflow is FrankenPHP/Caddy,
+# which requires no .htaccess. This file supports operators who deploy on
+# Apache (e.g. shared hosting or existing LAMP stacks).
+#
+# Requires: mod_rewrite, mod_negotiation (optional), AllowOverride All
+# =============================================================================
+
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Determine the RewriteBase automatically — covers subfolder deployments.
+    RewriteCond %{REQUEST_URI}::$0 ^(/.+)/(.*)::\2$
+    RewriteRule .* - [E=BASE:%1]
+
+    # Serve static assets directly (avoids routing overhead for CSS/JS/images).
+    RewriteCond %{ENV:REDIRECT_STATUS} =""
+    RewriteRule ^index\.php(?:/(.*)|$) %{ENV:BASE}/$1 [R=301,L]
+
+    # If the requested path resolves to an existing file or directory, serve it.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Route everything else through the Symfony front controller.
+    RewriteRule . %{ENV:BASE}/index.php [L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    <IfModule mod_alias.c>
+        RedirectMatch 307 ^/$ /index.php/
+    </IfModule>
+</IfModule>
+
+# Deny direct access to sensitive files.
+<FilesMatch "^(composer\.(json|lock)|\.env.*|\.git.*|phpunit.*|deptrac\.yaml|infection\.json)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>

@@ -1,0 +1,122 @@
+{
+    "name": "statflow/backend",
+    "description": "Statflow — privacy-first web analytics platform (REST API backend)",
+    "type": "project",
+    "license": "AGPL-3.0-only",
+    "authors": [
+        {
+            "name": "Tanguy Chénier",
+            "email": "tanguychenier@gmail.com",
+            "role": "Author"
+        }
+    ],
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.2",
+        "ext-ctype": "*",
+        "ext-iconv": "*",
+        "ext-openssl": "*",
+        "doctrine/dbal": "^4.0",
+        "doctrine/doctrine-bundle": "^2.13",
+        "doctrine/doctrine-migrations-bundle": "^3.3",
+        "doctrine/orm": "^3.0",
+        "geoip2/geoip2": "^3.0",
+        "predis/predis": "^2.2",
+        "symfony/cache": "7.4.*",
+        "symfony/console": "7.4.*",
+        "symfony/doctrine-messenger": "7.4.*",
+        "symfony/dotenv": "7.4.*",
+        "symfony/flex": "^2",
+        "symfony/framework-bundle": "7.4.*",
+        "symfony/http-client": "7.4.*",
+        "symfony/mailer": "7.4.*",
+        "symfony/messenger": "7.4.*",
+        "symfony/property-info": "7.4.*",
+        "symfony/redis-messenger": "7.4.*",
+        "symfony/runtime": "7.4.*",
+        "symfony/security-bundle": "7.4.*",
+        "symfony/serializer": "7.4.*",
+        "symfony/validator": "7.4.*",
+        "symfony/yaml": "7.4.*"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "symfony/flex": true,
+            "symfony/runtime": true,
+            "infection/extension-installer": true
+        },
+        "bump-after-update": true,
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    },
+    "replace": {
+        "symfony/polyfill-ctype": "*",
+        "symfony/polyfill-iconv": "*",
+        "symfony/polyfill-php72": "*",
+        "symfony/polyfill-php73": "*",
+        "symfony/polyfill-php74": "*",
+        "symfony/polyfill-php80": "*",
+        "symfony/polyfill-php81": "*",
+        "symfony/polyfill-php82": "*"
+    },
+    "scripts": {
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd",
+            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+        },
+        "post-install-cmd": [
+            "@auto-scripts"
+        ],
+        "post-update-cmd": [
+            "@auto-scripts"
+        ],
+        "test": "php -d memory_limit=-1 bin/phpunit",
+        "test:coverage": "php -d memory_limit=-1 -d xdebug.mode=coverage bin/phpunit --coverage-html var/coverage --coverage-clover var/coverage/clover.xml",
+        "phpstan": "php -d memory_limit=-1 vendor/bin/phpstan analyse",
+        "ecs": "vendor/bin/ecs check",
+        "ecs:fix": "vendor/bin/ecs check --fix",
+        "rector": "vendor/bin/rector process --dry-run",
+        "rector:fix": "vendor/bin/rector process",
+        "deptrac": "vendor/bin/deptrac analyse --config-file=deptrac.yaml",
+        "infection": "php -d memory_limit=-1 vendor/bin/infection --min-msi=80 --min-covered-msi=85",
+        "qa": [
+            "@ecs",
+            "@phpstan",
+            "@deptrac",
+            "@test"
+        ]
+    },
+    "conflict": {
+        "symfony/symfony": "*"
+    },
+    "extra": {
+        "symfony": {
+            "allow-contrib": false,
+            "require": "7.4.*"
+        }
+    },
+    "require-dev": {
+        "infection/infection": "^0.32.7",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-doctrine": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpstan/phpstan-symfony": "^2.0",
+        "phpunit/phpunit": "^11",
+        "qossmic/deptrac-shim": "^1.0",
+        "rector/rector": "^2.4",
+        "symfony/browser-kit": "7.4.*",
+        "symfony/css-selector": "7.4.*",
+        "symplify/easy-coding-standard": "^13.1"
+    }
+}
