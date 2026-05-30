@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lumen — the open-source, cookieless web and product analytics platform. Understand your users without compromising their privacy." />
+  <title>Lumen Analytics — Privacy-First Web Analytics</title>
+  <!-- STATFLOW_TRACKER -->
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+
+  <!-- ── Site Header ──────────────────────────────────────── -->
+  <header class="site-header" id="site-header" role="banner">
+    <div class="container">
+      <div class="site-header__inner">
+
+        <a href="index.html" class="site-logo" id="logo-home" data-testid="site-logo" aria-label="Lumen Analytics home">
+          <span class="site-logo__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </span>
+          Lumen
+        </a>
+
+        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+          <a href="index.html"      class="site-nav__link" id="nav-home"     data-testid="nav-home"    >Home</a>
+          <a href="pricing.html"    class="site-nav__link" id="nav-pricing"   data-testid="nav-pricing" >Pricing</a>
+          <a href="blog.html"       class="site-nav__link" id="nav-blog"      data-testid="nav-blog"    >Blog</a>
+          <a href="contact.html"    class="site-nav__link" id="nav-contact"   data-testid="nav-contact" >Contact</a>
+        </nav>
+
+        <div class="site-header__actions" id="header-actions">
+          <a href="contact.html" class="btn btn--ghost btn--sm" id="header-btn-login" data-testid="header-btn-login" data-action="login">Sign in</a>
+          <a href="pricing.html" class="btn btn--primary btn--sm" id="header-btn-cta" data-testid="header-btn-cta" data-action="start-trial">Get started free</a>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <!-- ── Hero ─────────────────────────────────────────── -->
+    <section class="hero" id="hero" data-testid="hero-section" aria-labelledby="hero-title">
+      <div class="container">
+
+        <span class="hero__eyebrow" id="hero-eyebrow">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          Open-source &amp; cookieless
+        </span>
+
+        <h1 class="hero__title" id="hero-title">
+          Analytics that respect<br class="d-none d-md-block" />
+          your users' <span class="highlight">privacy</span>
+        </h1>
+
+        <p class="hero__subtitle" id="hero-subtitle">
+          Lumen gives you deep insight into user behaviour — pageviews, heatmaps, journeys,
+          funnels — without cookies, fingerprinting, or GDPR headaches.
+        </p>
+
+        <div class="hero__actions">
+          <a href="pricing.html" class="btn btn--primary btn--lg" id="hero-btn-primary" data-testid="hero-btn-primary" data-action="hero-cta-primary">
+            Start for free — no card needed
+          </a>
+          <a href="blog-post.html" class="btn btn--secondary btn--lg" id="hero-btn-secondary" data-testid="hero-btn-secondary" data-action="hero-cta-secondary">
+            Read the docs
+          </a>
+        </div>
+
+        <div class="hero__social-proof">
+          <span class="hero__social-proof-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            No cookies required
+          </span>
+          <span class="hero__social-proof-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            GDPR &amp; CCPA compliant
+          </span>
+          <span class="hero__social-proof-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            Self-host in minutes
+          </span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── Logos strip ───────────────────────────────────── -->
+    <section class="section section--alt" id="social-proof" aria-label="Used by engineering teams at">
+      <div class="container text-center">
+        <p style="font-size:.8125rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-8);">
+          Trusted by teams at
+        </p>
+        <div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--space-10);">
+          <span id="logo-acme"    data-testid="logo-acme"    style="font-weight:800;font-size:1.25rem;color:var(--color-text-light);letter-spacing:-.03em;">Acme Corp</span>
+          <span id="logo-vordex"  data-testid="logo-vordex"  style="font-weight:800;font-size:1.25rem;color:var(--color-text-light);letter-spacing:-.03em;">Vordex</span>
+          <span id="logo-stackly" data-testid="logo-stackly" style="font-weight:800;font-size:1.25rem;color:var(--color-text-light);letter-spacing:-.03em;">Stackly</span>
+          <span id="logo-novabit" data-testid="logo-novabit" style="font-weight:800;font-size:1.25rem;color:var(--color-text-light);letter-spacing:-.03em;">NovaBit</span>
+          <span id="logo-quanta"  data-testid="logo-quanta"  style="font-weight:800;font-size:1.25rem;color:var(--color-text-light);letter-spacing:-.03em;">Quanta IO</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Features ──────────────────────────────────────── -->
+    <section class="section" id="features" data-testid="features-section" aria-labelledby="features-title">
+      <div class="container">
+        <header class="section__header">
+          <span class="section__eyebrow">Core capabilities</span>
+          <h2 class="section__title" id="features-title">Everything you need to understand your users</h2>
+          <p class="section__subtitle">Lumen captures the full picture of how visitors interact with your product — with zero impact on their privacy.</p>
+        </header>
+
+        <div class="grid grid--3" id="features-grid">
+
+          <article class="feature-card" id="feature-pageviews" data-testid="feature-card-pageviews" data-reveal>
+            <div class="feature-card__icon feature-card__icon--blue" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <h3 class="feature-card__title">Pageview Analytics</h3>
+            <p class="feature-card__desc">Real-time and historical pageview data broken down by page, referrer, country, device, and custom dimensions — all without cookies.</p>
+          </article>
+
+          <article class="feature-card" id="feature-heatmaps" data-testid="feature-card-heatmaps" data-reveal>
+            <div class="feature-card__icon feature-card__icon--violet" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+            </div>
+            <h3 class="feature-card__title">Heatmaps &amp; Click Maps</h3>
+            <p class="feature-card__desc">Visualise exactly where users click, tap, and scroll. Identify cold spots and friction in any page layout at a glance.</p>
+          </article>
+
+          <article class="feature-card" id="feature-journeys" data-testid="feature-card-journeys" data-reveal>
+            <div class="feature-card__icon feature-card__icon--green" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <h3 class="feature-card__title">User Journeys</h3>
+            <p class="feature-card__desc">Map the full path users take through your product. Spot drop-offs, loops, and unexpected routes in an intuitive Sankey diagram.</p>
+          </article>
+
+          <article class="feature-card" id="feature-funnels" data-testid="feature-card-funnels" data-reveal>
+            <div class="feature-card__icon feature-card__icon--amber" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            </div>
+            <h3 class="feature-card__title">Conversion Funnels</h3>
+            <p class="feature-card__desc">Define multi-step funnels and immediately see where users fall off — by segment, device, or traffic source.</p>
+          </article>
+
+          <article class="feature-card" id="feature-events" data-testid="feature-card-events" data-reveal>
+            <div class="feature-card__icon feature-card__icon--blue" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <h3 class="feature-card__title">Custom Events</h3>
+            <p class="feature-card__desc">Track any interaction with a single line of JS — button clicks, form submissions, video plays — and query them in real time.</p>
+          </article>
+
+          <article class="feature-card" id="feature-api" data-testid="feature-card-api" data-reveal>
+            <div class="feature-card__icon feature-card__icon--violet" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <h3 class="feature-card__title">Open Data API</h3>
+            <p class="feature-card__desc">Pull raw events or aggregated metrics directly from ClickHouse via the REST or SQL API. Your data, your infrastructure.</p>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Stats strip ────────────────────────────────────── -->
+    <div class="stats-strip" id="stats-strip" data-testid="stats-strip">
+      <div class="container">
+        <div class="stats-strip__grid">
+          <div class="stat" id="stat-events" data-testid="stat-events">
+            <div class="stat__value">10B+</div>
+            <div class="stat__label">Events ingested daily</div>
+          </div>
+          <div class="stat" id="stat-latency" data-testid="stat-latency">
+            <div class="stat__value">&lt;1ms</div>
+            <div class="stat__label">Tracker script overhead</div>
+          </div>
+          <div class="stat" id="stat-uptime" data-testid="stat-uptime">
+            <div class="stat__value">99.99%</div>
+            <div class="stat__label">Ingestion uptime SLA</div>
+          </div>
+          <div class="stat" id="stat-stars" data-testid="stat-stars">
+            <div class="stat__value">12k★</div>
+            <div class="stat__label">GitHub stars</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Testimonials ───────────────────────────────────── -->
+    <section class="section section--alt" id="testimonials" data-testid="testimonials-section" aria-labelledby="testimonials-title">
+      <div class="container">
+        <header class="section__header">
+          <span class="section__eyebrow">What people say</span>
+          <h2 class="section__title" id="testimonials-title">Teams love Lumen</h2>
+        </header>
+
+        <div class="grid grid--3" id="testimonials-grid">
+
+          <blockquote class="testimonial-card" id="testimonial-1" data-testid="testimonial-1" data-reveal>
+            <p class="testimonial-card__quote">"We replaced our previous analytics stack in an afternoon. The heatmaps alone uncovered a button that was invisible on mobile — fixing it doubled our conversion rate."</p>
+            <footer class="testimonial-card__author">
+              <div class="testimonial-card__avatar" aria-hidden="true">SR</div>
+              <div>
+                <div class="testimonial-card__name">Sophie Renard</div>
+                <div class="testimonial-card__role">Head of Product, Vordex</div>
+              </div>
+            </footer>
+          </blockquote>
+
+          <blockquote class="testimonial-card" id="testimonial-2" data-testid="testimonial-2" data-reveal>
+            <p class="testimonial-card__quote">"No cookie banner, no consent fatigue, no GDPR risk. Lumen was the only tool that let us track EU users out of the box without legal review."</p>
+            <footer class="testimonial-card__author">
+              <div class="testimonial-card__avatar" aria-hidden="true">MK</div>
+              <div>
+                <div class="testimonial-card__name">Marcus Klein</div>
+                <div class="testimonial-card__role">CTO, NovaBit</div>
+              </div>
+            </footer>
+          </blockquote>
+
+          <blockquote class="testimonial-card" id="testimonial-3" data-testid="testimonial-3" data-reveal>
+            <p class="testimonial-card__quote">"The open data API is the killer feature for us. We pipe raw events into our own BI stack and get exactly the views our analysts need."</p>
+            <footer class="testimonial-card__author">
+              <div class="testimonial-card__avatar" aria-hidden="true">AL</div>
+              <div>
+                <div class="testimonial-card__name">Anya Larsson</div>
+                <div class="testimonial-card__role">Data Engineer, Stackly</div>
+              </div>
+            </footer>
+          </blockquote>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CTA Banner ─────────────────────────────────────── -->
+    <section class="cta-banner" id="cta-home" data-testid="cta-banner-home" aria-labelledby="cta-home-title">
+      <div class="container">
+        <h2 class="cta-banner__title" id="cta-home-title">Ready to drop the cookie banner?</h2>
+        <p class="cta-banner__subtitle">Get started in under five minutes. Self-host or use our cloud — both are free to try.</p>
+        <div class="cta-banner__actions">
+          <a href="pricing.html" class="btn btn--primary btn--lg" id="cta-home-btn-primary" data-testid="cta-home-btn-primary" data-action="cta-home-primary">
+            View pricing
+          </a>
+          <a href="contact.html" class="btn btn--ghost btn--lg" id="cta-home-btn-secondary" data-testid="cta-home-btn-secondary" data-action="cta-home-secondary">
+            Talk to us
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Site Footer ──────────────────────────────────────── -->
+  <footer class="site-footer" id="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="site-footer__grid">
+
+        <div class="site-footer__brand">
+          <a href="index.html" class="site-footer__logo" id="footer-logo" data-testid="footer-logo">
+            <span class="site-footer__logo-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </span>
+            Lumen
+          </a>
+          <p>Privacy-first, cookieless web &amp; product analytics. Open-source, self-hostable, and built for developers who care about their users.</p>
+        </div>
+
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Product</p>
+          <ul class="site-footer__links">
+            <li><a href="index.html#features" class="site-footer__link" id="footer-link-features" data-testid="footer-link-features">Features</a></li>
+            <li><a href="pricing.html"         class="site-footer__link" id="footer-link-pricing"  data-testid="footer-link-pricing" >Pricing</a></li>
+            <li><a href="blog-post.html"        class="site-footer__link" id="footer-link-docs"     data-testid="footer-link-docs"   >Docs</a></li>
+            <li><a href="blog.html"             class="site-footer__link" id="footer-link-changelog" data-testid="footer-link-changelog">Changelog</a></li>
+          </ul>
+        </div>
+
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Resources</p>
+          <ul class="site-footer__links">
+            <li><a href="blog.html"     class="site-footer__link" id="footer-link-blog"    data-testid="footer-link-blog"   >Blog</a></li>
+            <li><a href="blog.html"     class="site-footer__link" id="footer-link-guides"  data-testid="footer-link-guides" >Guides</a></li>
+            <li><a href="blog.html"     class="site-footer__link" id="footer-link-api-ref" data-testid="footer-link-api-ref">API Reference</a></li>
+            <li><a href="404.html"      class="site-footer__link" id="footer-link-status"  data-testid="footer-link-status" >Status</a></li>
+          </ul>
+        </div>
+
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Company</p>
+          <ul class="site-footer__links">
+            <li><a href="contact.html"  class="site-footer__link" id="footer-link-contact"  data-testid="footer-link-contact" >Contact</a></li>
+            <li><a href="404.html"      class="site-footer__link" id="footer-link-privacy"   data-testid="footer-link-privacy" >Privacy policy</a></li>
+            <li><a href="404.html"      class="site-footer__link" id="footer-link-terms"     data-testid="footer-link-terms"  >Terms of service</a></li>
+            <li><a href="404.html"      class="site-footer__link" id="footer-link-security"  data-testid="footer-link-security">Security</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="site-footer__bottom">
+        <p id="footer-copyright" data-testid="footer-copyright">&copy; 2025 Lumen Analytics. Open-source under MIT.</p>
+        <nav class="site-footer__legal" aria-label="Legal">
+          <a href="404.html" class="site-footer__link" id="footer-legal-privacy" data-testid="footer-legal-privacy">Privacy</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-terms"   data-testid="footer-legal-terms"  >Terms</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-cookies" data-testid="footer-legal-cookies">Cookies (none!)</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

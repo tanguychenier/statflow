@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Get in touch with the Lumen Analytics team — whether you have a question, a bug report, or want to talk to sales." />
+  <title>Contact — Lumen Analytics</title>
+  <!-- STATFLOW_TRACKER -->
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+
+  <!-- ── Site Header ──────────────────────────────────────── -->
+  <header class="site-header" id="site-header" role="banner">
+    <div class="container">
+      <div class="site-header__inner">
+
+        <a href="index.html" class="site-logo" id="logo-home" data-testid="site-logo" aria-label="Lumen Analytics home">
+          <span class="site-logo__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </span>
+          Lumen
+        </a>
+
+        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+          <a href="index.html"    class="site-nav__link" id="nav-home"    data-testid="nav-home"   >Home</a>
+          <a href="pricing.html"  class="site-nav__link" id="nav-pricing"  data-testid="nav-pricing">Pricing</a>
+          <a href="blog.html"     class="site-nav__link" id="nav-blog"     data-testid="nav-blog"  >Blog</a>
+          <a href="contact.html"  class="site-nav__link" id="nav-contact"  data-testid="nav-contact">Contact</a>
+        </nav>
+
+        <div class="site-header__actions" id="header-actions">
+          <a href="contact.html" class="btn btn--ghost btn--sm"   id="header-btn-login" data-testid="header-btn-login" data-action="login">Sign in</a>
+          <a href="pricing.html" class="btn btn--primary btn--sm" id="header-btn-cta"   data-testid="header-btn-cta"  data-action="start-trial">Get started free</a>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <!-- ── Page header ───────────────────────────────────── -->
+    <section class="page-header" id="contact-header" aria-labelledby="contact-page-title">
+      <div class="container">
+        <span class="section__eyebrow">Contact</span>
+        <h1 class="page-header__title" id="contact-page-title">Let's talk</h1>
+        <p class="page-header__subtitle">Have a question, a feature request, or want to explore Enterprise? We read every message.</p>
+      </div>
+    </section>
+
+    <!-- ── Contact layout ─────────────────────────────────── -->
+    <section class="section" id="contact-section" data-testid="contact-section">
+      <div class="container">
+        <div class="contact-layout">
+
+          <!-- Left: contact info -->
+          <div class="contact-info" id="contact-info" data-testid="contact-info">
+            <h2 class="contact-info__title">We're a small, remote team — and we like hearing from users.</h2>
+            <p class="contact-info__desc">
+              Whether you're evaluating Lumen, hit a bug in the ingestion pipeline, or just want to understand if cookieless analytics is right for your compliance situation — drop us a line. We typically reply within one business day.
+            </p>
+
+            <div class="contact-info__items">
+
+              <div class="contact-info__item" id="contact-item-email" data-testid="contact-item-email">
+                <span class="contact-info__item-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </span>
+                <div>
+                  <p class="contact-info__item-label">Email</p>
+                  <p class="contact-info__item-value">hello@lumen-analytics.example</p>
+                </div>
+              </div>
+
+              <div class="contact-info__item" id="contact-item-github" data-testid="contact-item-github">
+                <span class="contact-info__item-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                </span>
+                <div>
+                  <p class="contact-info__item-label">GitHub</p>
+                  <p class="contact-info__item-value">github.com/lumen-analytics (example)</p>
+                </div>
+              </div>
+
+              <div class="contact-info__item" id="contact-item-discord" data-testid="contact-item-discord">
+                <span class="contact-info__item-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </span>
+                <div>
+                  <p class="contact-info__item-label">Community Discord</p>
+                  <p class="contact-info__item-value">discord.lumen-analytics.example</p>
+                </div>
+              </div>
+
+              <div class="contact-info__item" id="contact-item-office" data-testid="contact-item-office">
+                <span class="contact-info__item-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                </span>
+                <div>
+                  <p class="contact-info__item-label">Registered office</p>
+                  <p class="contact-info__item-value">Remote-first · EU-based data processing</p>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Quick links -->
+            <div style="margin-top:var(--space-8);padding-top:var(--space-8);border-top:1px solid var(--color-border);">
+              <p style="font-size:.875rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-muted);margin-bottom:var(--space-4);">Shortcuts</p>
+              <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+                <a href="pricing.html" class="btn btn--secondary btn--sm" id="contact-shortcut-pricing"  data-testid="contact-shortcut-pricing"  data-action="contact-shortcut-pricing" >View pricing plans</a>
+                <a href="blog-post.html" class="btn btn--ghost btn--sm"   id="contact-shortcut-docs"     data-testid="contact-shortcut-docs"     data-action="contact-shortcut-docs"   >Read the docs</a>
+                <a href="blog.html"      class="btn btn--ghost btn--sm"   id="contact-shortcut-changelog" data-testid="contact-shortcut-changelog" data-action="contact-shortcut-changelog">See what's new</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: contact form -->
+          <div class="contact-form" id="contact-form-card" data-testid="contact-form-card">
+            <h2 style="font-size:1.25rem;font-weight:800;margin-bottom:var(--space-2);">Send us a message</h2>
+            <p style="font-size:.9375rem;color:var(--color-text-muted);margin-bottom:var(--space-6);">We'll get back to you within one business day.</p>
+
+            <form
+              id="contact-form"
+              data-testid="contact-form"
+              novalidate
+              aria-label="Contact form"
+            >
+              <!-- Name + Email row -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="contact-name">
+                    Name <span class="required" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="contact-name"
+                    name="name"
+                    data-testid="contact-field-name"
+                    placeholder="Jane Smith"
+                    autocomplete="name"
+                    required
+                    aria-required="true"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="contact-email">
+                    Email <span class="required" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="contact-email"
+                    name="email"
+                    data-testid="contact-field-email"
+                    placeholder="jane@example.com"
+                    autocomplete="email"
+                    required
+                    aria-required="true"
+                  />
+                </div>
+              </div>
+
+              <!-- Company -->
+              <div class="form-group">
+                <label class="form-label" for="contact-company">Company</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="contact-company"
+                  name="company"
+                  data-testid="contact-field-company"
+                  placeholder="Acme Corp"
+                  autocomplete="organization"
+                />
+              </div>
+
+              <!-- Reason -->
+              <div class="form-group">
+                <label class="form-label" for="contact-reason">
+                  Reason <span class="required" aria-hidden="true">*</span>
+                </label>
+                <select
+                  class="form-control form-select"
+                  id="contact-reason"
+                  name="reason"
+                  data-testid="contact-field-reason"
+                  required
+                  aria-required="true"
+                >
+                  <option value="" disabled selected>Select a topic…</option>
+                  <option value="general"     id="contact-reason-general"     data-testid="contact-reason-general"    >General question</option>
+                  <option value="sales"       id="contact-reason-sales"       data-testid="contact-reason-sales"      >Sales / Enterprise inquiry</option>
+                  <option value="bug"         id="contact-reason-bug"         data-testid="contact-reason-bug"        >Bug report</option>
+                  <option value="feature"     id="contact-reason-feature"     data-testid="contact-reason-feature"    >Feature request</option>
+                  <option value="partnership" id="contact-reason-partnership" data-testid="contact-reason-partnership">Partnership</option>
+                </select>
+              </div>
+
+              <!-- Message -->
+              <div class="form-group">
+                <label class="form-label" for="contact-message">
+                  Message <span class="required" aria-hidden="true">*</span>
+                </label>
+                <textarea
+                  class="form-control"
+                  id="contact-message"
+                  name="message"
+                  data-testid="contact-field-message"
+                  rows="5"
+                  placeholder="Tell us what's on your mind…"
+                  required
+                  aria-required="true"
+                ></textarea>
+              </div>
+
+              <!-- Privacy notice -->
+              <p style="font-size:.8125rem;color:var(--color-text-muted);margin-bottom:var(--space-6);">
+                By submitting this form you agree to our
+                <a href="404.html" id="contact-privacy-link" data-testid="contact-privacy-link">privacy policy</a>.
+                We will never share your data with third parties.
+              </p>
+
+              <button
+                type="submit"
+                class="btn btn--primary"
+                id="contact-btn-submit"
+                data-testid="contact-btn-submit"
+                data-action="submit-contact"
+                style="width:100%;justify-content:center;"
+              >
+                Send message
+              </button>
+
+              <!-- Success feedback (shown by JS after submit) -->
+              <div class="form-feedback" id="form-feedback" data-testid="form-feedback" role="status" aria-live="polite">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Message sent! We'll be in touch within one business day.
+              </div>
+
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FAQ strip ──────────────────────────────────────── -->
+    <section class="section section--alt" id="contact-faq" data-testid="contact-faq" aria-labelledby="contact-faq-title">
+      <div class="container">
+        <header class="section__header">
+          <span class="section__eyebrow">Before you write</span>
+          <h2 class="section__title" id="contact-faq-title">Quick answers</h2>
+        </header>
+
+        <div class="grid grid--3" style="max-width:900px;margin-inline:auto;">
+
+          <div id="contact-faq-1" data-testid="contact-faq-1" style="padding:var(--space-6);background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-xl);">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:var(--space-2);">How fast is the response time?</h3>
+            <p style="font-size:.9375rem;color:var(--color-text-muted);line-height:1.65;">We aim to reply within one business day for all enquiries. Enterprise customers get a 4-hour SLA during business hours.</p>
+          </div>
+
+          <div id="contact-faq-2" data-testid="contact-faq-2" style="padding:var(--space-6);background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-xl);">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:var(--space-2);">Is there a public issue tracker?</h3>
+            <p style="font-size:.9375rem;color:var(--color-text-muted);line-height:1.65;">Yes — GitHub Issues is the primary venue for bug reports and feature requests. The contact form routes to the same team.</p>
+          </div>
+
+          <div id="contact-faq-3" data-testid="contact-faq-3" style="padding:var(--space-6);background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-xl);">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:var(--space-2);">Can I book a live demo?</h3>
+            <p style="font-size:.9375rem;color:var(--color-text-muted);line-height:1.65;">Absolutely. Select "Sales / Enterprise inquiry" in the form and mention you'd like a demo call — we'll send a calendar link.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Site Footer ──────────────────────────────────────── -->
+  <footer class="site-footer" id="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="site-footer__grid">
+        <div class="site-footer__brand">
+          <a href="index.html" class="site-footer__logo" id="footer-logo" data-testid="footer-logo">
+            <span class="site-footer__logo-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </span>
+            Lumen
+          </a>
+          <p>Privacy-first, cookieless web &amp; product analytics. Open-source, self-hostable, and built for developers who care about their users.</p>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Product</p>
+          <ul class="site-footer__links">
+            <li><a href="index.html#features" class="site-footer__link" id="footer-link-features"  data-testid="footer-link-features">Features</a></li>
+            <li><a href="pricing.html"         class="site-footer__link" id="footer-link-pricing"   data-testid="footer-link-pricing">Pricing</a></li>
+            <li><a href="blog-post.html"        class="site-footer__link" id="footer-link-docs"      data-testid="footer-link-docs">Docs</a></li>
+            <li><a href="blog.html"             class="site-footer__link" id="footer-link-changelog" data-testid="footer-link-changelog">Changelog</a></li>
+          </ul>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Resources</p>
+          <ul class="site-footer__links">
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-blog"    data-testid="footer-link-blog">Blog</a></li>
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-guides"  data-testid="footer-link-guides">Guides</a></li>
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-api-ref" data-testid="footer-link-api-ref">API Reference</a></li>
+            <li><a href="404.html"  class="site-footer__link" id="footer-link-status"  data-testid="footer-link-status">Status</a></li>
+          </ul>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Company</p>
+          <ul class="site-footer__links">
+            <li><a href="contact.html" class="site-footer__link" id="footer-link-contact"  data-testid="footer-link-contact">Contact</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-privacy"   data-testid="footer-link-privacy">Privacy policy</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-terms"     data-testid="footer-link-terms">Terms of service</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-security"  data-testid="footer-link-security">Security</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="site-footer__bottom">
+        <p id="footer-copyright" data-testid="footer-copyright">&copy; 2025 Lumen Analytics. Open-source under MIT.</p>
+        <nav class="site-footer__legal" aria-label="Legal">
+          <a href="404.html" class="site-footer__link" id="footer-legal-privacy" data-testid="footer-legal-privacy">Privacy</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-terms"   data-testid="footer-legal-terms">Terms</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-cookies" data-testid="footer-legal-cookies">Cookies (none!)</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

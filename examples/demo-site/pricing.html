@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Simple, transparent pricing for Lumen Analytics. Free forever for small sites. Predictable plans as you scale." />
+  <title>Pricing — Lumen Analytics</title>
+  <!-- STATFLOW_TRACKER -->
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+
+  <!-- ── Site Header ──────────────────────────────────────── -->
+  <header class="site-header" id="site-header" role="banner">
+    <div class="container">
+      <div class="site-header__inner">
+
+        <a href="index.html" class="site-logo" id="logo-home" data-testid="site-logo" aria-label="Lumen Analytics home">
+          <span class="site-logo__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </span>
+          Lumen
+        </a>
+
+        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+          <a href="index.html"      class="site-nav__link" id="nav-home"    data-testid="nav-home"   >Home</a>
+          <a href="pricing.html"    class="site-nav__link" id="nav-pricing"  data-testid="nav-pricing">Pricing</a>
+          <a href="blog.html"       class="site-nav__link" id="nav-blog"     data-testid="nav-blog"  >Blog</a>
+          <a href="contact.html"    class="site-nav__link" id="nav-contact"  data-testid="nav-contact">Contact</a>
+        </nav>
+
+        <div class="site-header__actions" id="header-actions">
+          <a href="contact.html" class="btn btn--ghost btn--sm" id="header-btn-login"  data-testid="header-btn-login"  data-action="login">Sign in</a>
+          <a href="pricing.html" class="btn btn--primary btn--sm" id="header-btn-cta" data-testid="header-btn-cta"   data-action="start-trial">Get started free</a>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <!-- ── Page header ───────────────────────────────────── -->
+    <section class="page-header" id="pricing-header" aria-labelledby="pricing-page-title">
+      <div class="container">
+        <span class="section__eyebrow">Pricing</span>
+        <h1 class="page-header__title" id="pricing-page-title">Simple, honest pricing</h1>
+        <p class="page-header__subtitle">No per-seat fees. No sampling. No surprise bills. Pay only for the events you collect.</p>
+
+        <!-- Billing toggle -->
+        <div style="display:flex;align-items:center;justify-content:center;gap:var(--space-3);margin-top:var(--space-8);">
+          <span id="label-monthly" style="font-weight:600;font-size:.9375rem;">Monthly</span>
+          <label style="position:relative;display:inline-flex;align-items:center;cursor:pointer;" aria-label="Toggle annual billing">
+            <input type="checkbox" id="billing-toggle" data-testid="billing-toggle" style="opacity:0;width:0;height:0;position:absolute;" />
+            <span style="display:block;width:44px;height:24px;background:var(--color-primary);border-radius:12px;position:relative;transition:background .15s ease;">
+              <span style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .15s ease;" id="toggle-knob"></span>
+            </span>
+          </label>
+          <span id="label-annual" style="font-weight:600;font-size:.9375rem;opacity:.5;">
+            Annual <span class="badge badge--new" style="margin-left:var(--space-1);">save 20%</span>
+          </span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── Pricing cards ─────────────────────────────────── -->
+    <section class="section" id="pricing-plans" data-testid="pricing-section" aria-labelledby="pricing-page-title">
+      <div class="container">
+        <div class="pricing-grid" id="pricing-grid">
+
+          <!-- Starter -->
+          <article class="pricing-card" id="pricing-card-starter" data-testid="pricing-card-starter" data-plan="starter">
+            <p class="pricing-card__name">Starter</p>
+            <div class="pricing-card__price">
+              <span class="pricing-card__amount" data-price-monthly="$0" data-price-annual="$0">$0</span>
+              <span class="pricing-card__period">/ month</span>
+            </div>
+            <p class="pricing-card__desc">For side projects and personal sites. Up to 100k events/month included.</p>
+            <hr class="pricing-card__divider" />
+            <ul class="pricing-card__features" aria-label="Starter plan features">
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Up to 100k events / month
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                1 site
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Pageview &amp; click analytics
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                7-day data retention
+              </li>
+              <li class="pricing-card__feature pricing-card__feature--disabled">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--x" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Heatmaps
+              </li>
+              <li class="pricing-card__feature pricing-card__feature--disabled">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--x" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                User journeys
+              </li>
+              <li class="pricing-card__feature pricing-card__feature--disabled">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--x" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Data export API
+              </li>
+            </ul>
+            <a href="contact.html" class="btn btn--secondary" style="width:100%;justify-content:center;" id="pricing-btn-starter" data-testid="pricing-btn-starter" data-action="select-plan" data-plan="starter">
+              Get started free
+            </a>
+          </article>
+
+          <!-- Growth (featured) -->
+          <article class="pricing-card pricing-card--featured" id="pricing-card-growth" data-testid="pricing-card-growth" data-plan="growth">
+            <span class="pricing-card__badge">Most popular</span>
+            <p class="pricing-card__name">Growth</p>
+            <div class="pricing-card__price">
+              <span class="pricing-card__amount" data-price-monthly="$49" data-price-annual="$39">$49</span>
+              <span class="pricing-card__period">/ month</span>
+            </div>
+            <p class="pricing-card__desc">For growing products that need deeper behavioural insight and longer retention.</p>
+            <hr class="pricing-card__divider" />
+            <ul class="pricing-card__features" aria-label="Growth plan features">
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Up to 5M events / month
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                10 sites
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Heatmaps &amp; click maps
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                User journeys &amp; funnels
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                90-day data retention
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Data export API
+              </li>
+              <li class="pricing-card__feature pricing-card__feature--disabled">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--x" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Custom SQL access
+              </li>
+            </ul>
+            <a href="contact.html" class="btn btn--primary" style="width:100%;justify-content:center;" id="pricing-btn-growth" data-testid="pricing-btn-growth" data-action="select-plan" data-plan="growth">
+              Start 14-day trial
+            </a>
+          </article>
+
+          <!-- Enterprise -->
+          <article class="pricing-card" id="pricing-card-enterprise" data-testid="pricing-card-enterprise" data-plan="enterprise">
+            <p class="pricing-card__name">Enterprise</p>
+            <div class="pricing-card__price">
+              <span class="pricing-card__amount" style="font-size:2.25rem;" data-price-monthly="Custom" data-price-annual="Custom">Custom</span>
+            </div>
+            <p class="pricing-card__desc">For large-scale deployments, dedicated infrastructure, and enterprise SLAs.</p>
+            <hr class="pricing-card__divider" />
+            <ul class="pricing-card__features" aria-label="Enterprise plan features">
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Unlimited events
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Unlimited sites
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                All Growth features
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Custom SQL access (ClickHouse)
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Custom data retention
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Dedicated infrastructure
+              </li>
+              <li class="pricing-card__feature">
+                <svg class="pricing-card__feature-icon pricing-card__feature-icon--check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                99.99% uptime SLA + support
+              </li>
+            </ul>
+            <a href="contact.html" class="btn btn--secondary" style="width:100%;justify-content:center;" id="pricing-btn-enterprise" data-testid="pricing-btn-enterprise" data-action="select-plan" data-plan="enterprise">
+              Contact sales
+            </a>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FAQ ───────────────────────────────────────────── -->
+    <section class="section section--alt" id="pricing-faq" data-testid="pricing-faq" aria-labelledby="faq-title">
+      <div class="container">
+        <header class="section__header">
+          <span class="section__eyebrow">FAQ</span>
+          <h2 class="section__title" id="faq-title">Common questions</h2>
+        </header>
+
+        <div class="faq-list" id="faq-list">
+
+          <details class="faq-item" id="faq-1" data-testid="faq-item-1">
+            <summary class="faq-item__trigger" data-testid="faq-trigger-1">
+              What counts as an "event"?
+              <svg class="faq-item__icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-item__body">
+              Every hit sent to Lumen — a pageview, a custom event, a click, or a form submission — counts as one event. Heatmap recordings count as a single event per session regardless of how many interactions are captured.
+            </div>
+          </details>
+
+          <details class="faq-item" id="faq-2" data-testid="faq-item-2">
+            <summary class="faq-item__trigger" data-testid="faq-trigger-2">
+              Can I self-host Lumen instead of using the cloud?
+              <svg class="faq-item__icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-item__body">
+              Yes — Lumen is fully open-source under the MIT licence. You can run the entire stack (tracker, ingestion API, ClickHouse, and dashboard) on your own infrastructure. Pricing only applies to our managed cloud offering.
+            </div>
+          </details>
+
+          <details class="faq-item" id="faq-3" data-testid="faq-item-3">
+            <summary class="faq-item__trigger" data-testid="faq-trigger-3">
+              Do I really not need a cookie banner?
+              <svg class="faq-item__icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-item__body">
+              In the vast majority of jurisdictions, yes. Lumen does not set cookies, does not fingerprint devices, and does not share data with third parties. We recommend confirming with your legal team for your specific situation, but most Lumen customers operate without a consent banner.
+            </div>
+          </details>
+
+          <details class="faq-item" id="faq-4" data-testid="faq-item-4">
+            <summary class="faq-item__trigger" data-testid="faq-trigger-4">
+              What happens if I exceed my plan's event limit?
+              <svg class="faq-item__icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-item__body">
+              We'll notify you by email when you reach 80% and 100% of your monthly limit. Events over the limit are queued and processed when you upgrade — we never silently drop data.
+            </div>
+          </details>
+
+          <details class="faq-item" id="faq-5" data-testid="faq-item-5">
+            <summary class="faq-item__trigger" data-testid="faq-trigger-5">
+              Is there a free trial for paid plans?
+              <svg class="faq-item__icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-item__body">
+              Growth comes with a 14-day free trial — no credit card required. Enterprise customers get a 30-day proof-of-concept period on dedicated infrastructure.
+            </div>
+          </details>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CTA ───────────────────────────────────────────── -->
+    <section class="cta-banner" id="cta-pricing" data-testid="cta-banner-pricing" aria-labelledby="cta-pricing-title">
+      <div class="container">
+        <h2 class="cta-banner__title" id="cta-pricing-title">Start measuring. Stop guessing.</h2>
+        <p class="cta-banner__subtitle">Join thousands of teams who instrument their products with Lumen.</p>
+        <div class="cta-banner__actions">
+          <a href="contact.html" class="btn btn--primary btn--lg" id="cta-pricing-btn-primary" data-testid="cta-pricing-btn-primary" data-action="cta-pricing-primary">
+            Get started for free
+          </a>
+          <a href="contact.html" class="btn btn--ghost btn--lg" id="cta-pricing-btn-secondary" data-testid="cta-pricing-btn-secondary" data-action="cta-pricing-secondary">
+            Talk to sales
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Site Footer ──────────────────────────────────────── -->
+  <footer class="site-footer" id="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="site-footer__grid">
+        <div class="site-footer__brand">
+          <a href="index.html" class="site-footer__logo" id="footer-logo" data-testid="footer-logo">
+            <span class="site-footer__logo-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </span>
+            Lumen
+          </a>
+          <p>Privacy-first, cookieless web &amp; product analytics. Open-source, self-hostable, and built for developers who care about their users.</p>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Product</p>
+          <ul class="site-footer__links">
+            <li><a href="index.html#features" class="site-footer__link" id="footer-link-features" data-testid="footer-link-features">Features</a></li>
+            <li><a href="pricing.html"         class="site-footer__link" id="footer-link-pricing"  data-testid="footer-link-pricing">Pricing</a></li>
+            <li><a href="blog-post.html"        class="site-footer__link" id="footer-link-docs"     data-testid="footer-link-docs">Docs</a></li>
+            <li><a href="blog.html"             class="site-footer__link" id="footer-link-changelog" data-testid="footer-link-changelog">Changelog</a></li>
+          </ul>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Resources</p>
+          <ul class="site-footer__links">
+            <li><a href="blog.html"  class="site-footer__link" id="footer-link-blog"    data-testid="footer-link-blog">Blog</a></li>
+            <li><a href="blog.html"  class="site-footer__link" id="footer-link-guides"  data-testid="footer-link-guides">Guides</a></li>
+            <li><a href="blog.html"  class="site-footer__link" id="footer-link-api-ref" data-testid="footer-link-api-ref">API Reference</a></li>
+            <li><a href="404.html"   class="site-footer__link" id="footer-link-status"  data-testid="footer-link-status">Status</a></li>
+          </ul>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Company</p>
+          <ul class="site-footer__links">
+            <li><a href="contact.html" class="site-footer__link" id="footer-link-contact"  data-testid="footer-link-contact">Contact</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-privacy"   data-testid="footer-link-privacy">Privacy policy</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-terms"     data-testid="footer-link-terms">Terms of service</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-security"  data-testid="footer-link-security">Security</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="site-footer__bottom">
+        <p id="footer-copyright" data-testid="footer-copyright">&copy; 2025 Lumen Analytics. Open-source under MIT.</p>
+        <nav class="site-footer__legal" aria-label="Legal">
+          <a href="404.html" class="site-footer__link" id="footer-legal-privacy" data-testid="footer-legal-privacy">Privacy</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-terms"   data-testid="footer-legal-terms">Terms</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-cookies" data-testid="footer-legal-cookies">Cookies (none!)</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+  <script>
+    // Animate billing toggle knob
+    document.addEventListener('DOMContentLoaded', function () {
+      var toggle = document.getElementById('billing-toggle');
+      var knob   = document.getElementById('toggle-knob');
+      if (!toggle || !knob) return;
+      toggle.addEventListener('change', function () {
+        knob.style.transform = toggle.checked ? 'translateX(20px)' : '';
+      });
+    });
+  </script>
+</body>
+</html>

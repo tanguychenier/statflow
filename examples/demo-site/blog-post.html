@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="How cookieless analytics actually works — tracing an event from the browser all the way through the Lumen ingestion pipeline to ClickHouse." />
+  <title>How cookieless analytics actually works — Lumen Blog</title>
+  <!-- STATFLOW_TRACKER -->
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+
+  <!-- ── Site Header ──────────────────────────────────────── -->
+  <header class="site-header" id="site-header" role="banner">
+    <div class="container">
+      <div class="site-header__inner">
+
+        <a href="index.html" class="site-logo" id="logo-home" data-testid="site-logo" aria-label="Lumen Analytics home">
+          <span class="site-logo__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </span>
+          Lumen
+        </a>
+
+        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+          <a href="index.html"    class="site-nav__link" id="nav-home"    data-testid="nav-home"   >Home</a>
+          <a href="pricing.html"  class="site-nav__link" id="nav-pricing"  data-testid="nav-pricing">Pricing</a>
+          <a href="blog.html"     class="site-nav__link" id="nav-blog"     data-testid="nav-blog"  >Blog</a>
+          <a href="contact.html"  class="site-nav__link" id="nav-contact"  data-testid="nav-contact">Contact</a>
+        </nav>
+
+        <div class="site-header__actions" id="header-actions">
+          <a href="contact.html" class="btn btn--ghost btn--sm"   id="header-btn-login" data-testid="header-btn-login" data-action="login">Sign in</a>
+          <a href="pricing.html" class="btn btn--primary btn--sm" id="header-btn-cta"   data-testid="header-btn-cta"  data-action="start-trial">Get started free</a>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <!-- ── Article Hero ──────────────────────────────────── -->
+    <header class="article-hero" id="article-hero" data-testid="article-hero" aria-labelledby="article-title">
+      <div class="container">
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" style="margin-bottom:var(--space-6);">
+          <ol style="display:flex;align-items:center;gap:var(--space-2);font-size:.875rem;color:var(--color-text-muted);list-style:none;">
+            <li><a href="index.html" id="breadcrumb-home"  data-testid="breadcrumb-home" style="color:var(--color-text-muted);">Home</a></li>
+            <li aria-hidden="true">/</li>
+            <li><a href="blog.html"  id="breadcrumb-blog"  data-testid="breadcrumb-blog" style="color:var(--color-text-muted);">Blog</a></li>
+            <li aria-hidden="true">/</li>
+            <li aria-current="page" style="color:var(--color-text);">How cookieless analytics works</li>
+          </ol>
+        </nav>
+
+        <span class="article-hero__tag">Analytics</span>
+        <h1 class="article-hero__title" id="article-title">
+          How cookieless analytics actually works — a technical deep-dive
+        </h1>
+        <div class="article-hero__meta">
+          <span>By <strong>Elena Voss</strong></span>
+          <span aria-hidden="true">·</span>
+          <time datetime="2025-04-10">April 10, 2025</time>
+          <span aria-hidden="true">·</span>
+          <span>12 min read</span>
+        </div>
+
+        <!-- Article actions -->
+        <div style="display:flex;align-items:center;justify-content:center;gap:var(--space-4);margin-top:var(--space-8);">
+          <button class="btn btn--ghost btn--sm" id="article-btn-share"    data-testid="article-btn-share"    data-action="share-article">Share</button>
+          <button class="btn btn--ghost btn--sm" id="article-btn-bookmark" data-testid="article-btn-bookmark" data-action="bookmark-article">Bookmark</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Article body ───────────────────────────────────── -->
+    <article class="article-body" id="article-body" data-testid="article-body" data-post-id="how-cookieless-analytics-works">
+
+      <p>
+        Most write-ups on "privacy-first analytics" spend a lot of ink explaining <em>why</em> you should stop using cookies and almost none on <em>how</em> the alternative actually works in production. This post fills that gap. We'll trace a single event from the moment a user clicks a button on your site all the way through to a row in ClickHouse — and explain every design decision along the way.
+      </p>
+
+      <h2>The problem with cookie-based analytics</h2>
+
+      <p>
+        Traditional analytics platforms like the incumbent market leaders use a persistent first-party cookie (or a third-party one if you haven't self-hosted) to stitch page views from the same browser into a single user session. This is elegant and accurate, but it has serious drawbacks:
+      </p>
+
+      <ul>
+        <li>Cookies are personal data under GDPR, ePrivacy, CCPA, and most other privacy regulations, so you need explicit opt-in consent before setting them.</li>
+        <li>Consent rates vary wildly — typically 40–70% — meaning your analytics are incomplete by design.</li>
+        <li>Safari's Intelligent Tracking Prevention (ITP) deletes first-party cookies after 7 days, further skewing long-term retention data.</li>
+        <li>Ad blockers block the analytics scripts outright. uBlock Origin has 40M+ users.</li>
+      </ul>
+
+      <p>
+        The result: cookie-based analytics consistently under-count traffic by 20–40%, depending on your audience. If your users are developers or privacy-conscious, the gap is even larger.
+      </p>
+
+      <h2>Session identification without cookies</h2>
+
+      <p>
+        If we can't use a persistent identifier stored in the browser, how do we stitch events into sessions? Lumen uses a combination of three signals, none of which are personal data under EU law:
+      </p>
+
+      <ol>
+        <li><strong>IP address hash (salted, daily-rotated).</strong> We hash the visitor's IP together with a daily salt that changes at midnight UTC. The raw IP is never stored; only the hash is. Because the salt rotates every 24 hours, the hash cannot be used to track a user across days.</li>
+        <li><strong>User-agent string hash.</strong> Combined with the IP hash, this produces a "daily fingerprint" that is stable within a session but not across days or devices.</li>
+        <li><strong>Referrer and URL.</strong> Session boundaries are inferred from referrer transitions and a 30-minute inactivity timeout, exactly as Universal Analytics defined sessions.</li>
+      </ol>
+
+      <blockquote>
+        The key insight is that you don't need to <em>identify</em> a user across days — you only need to stitch events within a ~30-minute window to produce meaningful session-level metrics.
+      </blockquote>
+
+      <h2>The tracker script</h2>
+
+      <p>
+        The Lumen tracker (<code>lumen.js</code>) is intentionally tiny — under 3 kB gzipped. It does three things on load:
+      </p>
+
+      <ol>
+        <li>Records the initial pageview by sending a <code>POST</code> request to the ingestion endpoint with the current URL, referrer, screen size, and a timestamp.</li>
+        <li>Listens for <code>history.pushState</code> / <code>popstate</code> to detect SPA navigation and fires additional pageview events accordingly.</li>
+        <li>Exposes <code>window.lumen.track(eventName, properties)</code> for custom events.</li>
+      </ol>
+
+      <p>
+        No cookies are set. No <code>localStorage</code> is written. The tracker is purely fire-and-forget.
+      </p>
+
+      <pre><code>// Minimal custom event example
+window.lumen.track('checkout_started', {
+  plan: 'growth',
+  billing_cycle: 'annual',
+  currency: 'USD',
+});</code></pre>
+
+      <h2>The ingestion pipeline</h2>
+
+      <p>
+        Events arrive at an HTTP endpoint backed by a lightweight Go service. The service does the following synchronously, in under 1 ms of added latency:
+      </p>
+
+      <ol>
+        <li>Validates the payload schema (rejects malformed events with a <code>400</code>).</li>
+        <li>Extracts the client IP from the <code>X-Forwarded-For</code> header, hashes it with today's salt, then discards the raw IP.</li>
+        <li>Enriches the event with GeoIP data (country, region) from a local MaxMind database — no external requests.</li>
+        <li>Parses the User-Agent string to extract browser, OS, and device type.</li>
+        <li>Writes the enriched event to a Kafka topic.</li>
+      </ol>
+
+      <p>
+        A Kafka consumer reads from the topic and batch-inserts rows into ClickHouse using the <code>INSERT INTO … FORMAT JSONEachRow</code> API with a 1-second flush interval. ClickHouse's columnar storage means even a full table scan over billions of rows completes in milliseconds for typical analytics queries.
+      </p>
+
+      <h2>Query layer</h2>
+
+      <p>
+        The Lumen dashboard queries ClickHouse directly. Here's the SQL behind the "unique visitors" metric for a given date range:
+      </p>
+
+      <pre><code>SELECT
+  toDate(timestamp) AS date,
+  uniqExact(session_id)    AS sessions,
+  uniqExact(daily_visitor_hash) AS visitors
+FROM events
+WHERE
+  site_id = 'your-site-id'
+  AND timestamp BETWEEN {start:DateTime} AND {end:DateTime}
+GROUP BY date
+ORDER BY date;</code></pre>
+
+      <p>
+        <code>uniqExact</code> gives an accurate count (not an HLL approximation) and still returns in under 10 ms on a 100M-row table, thanks to ClickHouse's aggressive parallelism.
+      </p>
+
+      <h2>What about accuracy vs. GA4?</h2>
+
+      <p>
+        In our internal benchmarks on sites with mixed audiences, Lumen consistently reports <strong>15–30% more sessions</strong> than GA4 for the same period. The gap is wider on developer-focused sites (where ad-blocker adoption is high) and narrower on e-commerce sites with a broad consumer audience.
+      </p>
+
+      <p>
+        This isn't Lumen over-counting — it's GA4 under-counting due to blocked scripts and unconsented cookie drops.
+      </p>
+
+      <h2>Conclusion</h2>
+
+      <p>
+        Cookieless analytics is not a compromise — it's often a more accurate picture of reality. By combining daily-salted IP hashing, user-agent fingerprinting, and session timeout logic, Lumen produces session data that is both privacy-safe and more complete than what most cookie-based tools deliver today.
+      </p>
+
+      <p>
+        The full source — tracker, ingestion service, and ClickHouse schema — is on GitHub under the MIT licence. Contributions welcome.
+      </p>
+
+      <!-- Article tags -->
+      <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-12);padding-top:var(--space-8);border-top:1px solid var(--color-border);">
+        <span style="font-size:.8125rem;font-weight:600;color:var(--color-text-muted);">Tagged:</span>
+        <a href="blog.html" class="btn btn--ghost btn--sm" id="article-tag-analytics" data-testid="article-tag-analytics" data-tag="analytics">analytics</a>
+        <a href="blog.html" class="btn btn--ghost btn--sm" id="article-tag-privacy"   data-testid="article-tag-privacy"   data-tag="privacy">privacy</a>
+        <a href="blog.html" class="btn btn--ghost btn--sm" id="article-tag-clickhouse" data-testid="article-tag-clickhouse" data-tag="clickhouse">clickhouse</a>
+      </div>
+
+    </article>
+
+    <!-- ── Related posts ──────────────────────────────────── -->
+    <section class="section section--alt" id="related-posts" data-testid="related-posts" aria-labelledby="related-title">
+      <div class="container">
+        <h2 class="section__title text-center" id="related-title" style="margin-bottom:var(--space-8);">Related articles</h2>
+        <div class="blog-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));">
+
+          <article class="blog-card" id="related-post-1" data-testid="related-post-1" aria-labelledby="related-post-1-title">
+            <div class="blog-card__thumb" style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);">
+              <span aria-hidden="true">🔒</span>
+            </div>
+            <div class="blog-card__body">
+              <span class="blog-card__tag blog-card__tag--privacy">Privacy</span>
+              <h3 class="blog-card__title" id="related-post-1-title">
+                <a href="blog-post.html" id="related-link-1" data-testid="related-link-1" data-post-id="gdpr-analytics-without-consent">
+                  GDPR analytics without a consent banner — what's actually legal?
+                </a>
+              </h3>
+              <div class="blog-card__meta">
+                <span>Marc Dupuis</span>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <span>8 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="blog-card" id="related-post-2" data-testid="related-post-2" aria-labelledby="related-post-2-title">
+            <div class="blog-card__thumb" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">
+              <span aria-hidden="true">🚀</span>
+            </div>
+            <div class="blog-card__body">
+              <span class="blog-card__tag blog-card__tag--guide">Guide</span>
+              <h3 class="blog-card__title" id="related-post-2-title">
+                <a href="blog-post.html" id="related-link-2" data-testid="related-link-2" data-post-id="self-host-lumen-5-minutes">
+                  Self-hosting Lumen in under 5 minutes
+                </a>
+              </h3>
+              <div class="blog-card__meta">
+                <span>Tom Fischer</span>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <span>6 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="blog-card" id="related-post-3" data-testid="related-post-3" aria-labelledby="related-post-3-title">
+            <div class="blog-card__thumb" style="background:linear-gradient(135deg,var(--color-primary-light),#bfdbfe);">
+              <span aria-hidden="true">🔥</span>
+            </div>
+            <div class="blog-card__body">
+              <span class="blog-card__tag blog-card__tag--analytics">Analytics</span>
+              <h3 class="blog-card__title" id="related-post-3-title">
+                <a href="blog-post.html" id="related-link-3" data-testid="related-link-3" data-post-id="heatmaps-at-scale">
+                  Rendering heatmaps at scale: 50B click events
+                </a>
+              </h3>
+              <div class="blog-card__meta">
+                <span>Elena Voss</span>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <span>15 min read</span>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CTA ───────────────────────────────────────────── -->
+    <section class="cta-banner" id="cta-post" data-testid="cta-banner-post" aria-labelledby="cta-post-title">
+      <div class="container">
+        <h2 class="cta-banner__title" id="cta-post-title">Try Lumen on your own site</h2>
+        <p class="cta-banner__subtitle">Add one script tag, get instant analytics. No cookie banner needed.</p>
+        <div class="cta-banner__actions">
+          <a href="pricing.html" class="btn btn--primary btn--lg" id="cta-post-btn-primary"   data-testid="cta-post-btn-primary"   data-action="cta-post-primary">Start for free</a>
+          <a href="blog.html"    class="btn btn--ghost btn--lg"   id="cta-post-btn-secondary" data-testid="cta-post-btn-secondary" data-action="cta-post-secondary">More articles</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Site Footer ──────────────────────────────────────── -->
+  <footer class="site-footer" id="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="site-footer__grid">
+        <div class="site-footer__brand">
+          <a href="index.html" class="site-footer__logo" id="footer-logo" data-testid="footer-logo">
+            <span class="site-footer__logo-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </span>
+            Lumen
+          </a>
+          <p>Privacy-first, cookieless web &amp; product analytics. Open-source, self-hostable, and built for developers who care about their users.</p>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Product</p>
+          <ul class="site-footer__links">
+            <li><a href="index.html#features" class="site-footer__link" id="footer-link-features"  data-testid="footer-link-features">Features</a></li>
+            <li><a href="pricing.html"         class="site-footer__link" id="footer-link-pricing"   data-testid="footer-link-pricing">Pricing</a></li>
+            <li><a href="blog-post.html"        class="site-footer__link" id="footer-link-docs"      data-testid="footer-link-docs">Docs</a></li>
+            <li><a href="blog.html"             class="site-footer__link" id="footer-link-changelog" data-testid="footer-link-changelog">Changelog</a></li>
+          </ul>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Resources</p>
+          <ul class="site-footer__links">
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-blog"    data-testid="footer-link-blog">Blog</a></li>
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-guides"  data-testid="footer-link-guides">Guides</a></li>
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-api-ref" data-testid="footer-link-api-ref">API Reference</a></li>
+            <li><a href="404.html"  class="site-footer__link" id="footer-link-status"  data-testid="footer-link-status">Status</a></li>
+          </ul>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Company</p>
+          <ul class="site-footer__links">
+            <li><a href="contact.html" class="site-footer__link" id="footer-link-contact"  data-testid="footer-link-contact">Contact</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-privacy"   data-testid="footer-link-privacy">Privacy policy</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-terms"     data-testid="footer-link-terms">Terms of service</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-security"  data-testid="footer-link-security">Security</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="site-footer__bottom">
+        <p id="footer-copyright" data-testid="footer-copyright">&copy; 2025 Lumen Analytics. Open-source under MIT.</p>
+        <nav class="site-footer__legal" aria-label="Legal">
+          <a href="404.html" class="site-footer__link" id="footer-legal-privacy" data-testid="footer-legal-privacy">Privacy</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-terms"   data-testid="footer-legal-terms">Terms</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-cookies" data-testid="footer-legal-cookies">Cookies (none!)</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

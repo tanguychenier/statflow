@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Page not found — Lumen Analytics" />
+  <title>404 — Page not found · Lumen Analytics</title>
+  <!-- STATFLOW_TRACKER -->
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+
+  <!-- ── Site Header ──────────────────────────────────────── -->
+  <header class="site-header" id="site-header" role="banner">
+    <div class="container">
+      <div class="site-header__inner">
+
+        <a href="index.html" class="site-logo" id="logo-home" data-testid="site-logo" aria-label="Lumen Analytics home">
+          <span class="site-logo__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </span>
+          Lumen
+        </a>
+
+        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+          <a href="index.html"    class="site-nav__link" id="nav-home"    data-testid="nav-home"   >Home</a>
+          <a href="pricing.html"  class="site-nav__link" id="nav-pricing"  data-testid="nav-pricing">Pricing</a>
+          <a href="blog.html"     class="site-nav__link" id="nav-blog"     data-testid="nav-blog"  >Blog</a>
+          <a href="contact.html"  class="site-nav__link" id="nav-contact"  data-testid="nav-contact">Contact</a>
+        </nav>
+
+        <div class="site-header__actions" id="header-actions">
+          <a href="contact.html" class="btn btn--ghost btn--sm"   id="header-btn-login" data-testid="header-btn-login" data-action="login">Sign in</a>
+          <a href="pricing.html" class="btn btn--primary btn--sm" id="header-btn-cta"   data-testid="header-btn-cta"  data-action="start-trial">Get started free</a>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <div class="error-page" id="error-page-404" data-testid="error-page-404" aria-labelledby="error-title">
+      <div class="error-page__code" aria-hidden="true">404</div>
+      <h1 class="error-page__title" id="error-title">Page not found</h1>
+      <p class="error-page__desc">
+        The page you're looking for has moved, been deleted, or never existed.
+        Don't worry — the homepage has everything you need.
+      </p>
+      <div class="error-page__actions">
+        <a href="index.html"   class="btn btn--primary btn--lg" id="error-btn-home"    data-testid="error-btn-home"    data-action="error-go-home">Go to homepage</a>
+        <a href="blog.html"    class="btn btn--ghost btn--lg"   id="error-btn-blog"    data-testid="error-btn-blog"    data-action="error-go-blog">Read the blog</a>
+        <a href="contact.html" class="btn btn--ghost btn--lg"   id="error-btn-contact" data-testid="error-btn-contact" data-action="error-go-contact">Contact us</a>
+      </div>
+
+      <!-- Search suggestion -->
+      <div style="margin-top:var(--space-12);padding:var(--space-8);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);max-width:480px;width:100%;">
+        <p style="font-size:.9375rem;font-weight:600;margin-bottom:var(--space-4);">Looking for one of these?</p>
+        <ul style="display:flex;flex-direction:column;gap:var(--space-3);">
+          <li>
+            <a href="pricing.html" id="error-link-pricing" data-testid="error-link-pricing" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-radius:var(--radius-md);color:var(--color-text);text-decoration:none;transition:background-color var(--transition);" onmouseover="this.style.background='var(--color-border)'" onmouseout="this.style.background=''">
+              <span style="font-size:1.25rem;" aria-hidden="true">💳</span>
+              <div>
+                <div style="font-weight:600;font-size:.9375rem;">Pricing</div>
+                <div style="font-size:.8125rem;color:var(--color-text-muted);">Plans starting at $0/month</div>
+              </div>
+            </a>
+          </li>
+          <li>
+            <a href="blog.html" id="error-link-blog" data-testid="error-link-blog" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-radius:var(--radius-md);color:var(--color-text);text-decoration:none;transition:background-color var(--transition);" onmouseover="this.style.background='var(--color-border)'" onmouseout="this.style.background=''">
+              <span style="font-size:1.25rem;" aria-hidden="true">📝</span>
+              <div>
+                <div style="font-weight:600;font-size:.9375rem;">Blog</div>
+                <div style="font-size:.8125rem;color:var(--color-text-muted);">Articles on privacy-first analytics</div>
+              </div>
+            </a>
+          </li>
+          <li>
+            <a href="blog-post.html" id="error-link-docs" data-testid="error-link-docs" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-radius:var(--radius-md);color:var(--color-text);text-decoration:none;transition:background-color var(--transition);" onmouseover="this.style.background='var(--color-border)'" onmouseout="this.style.background=''">
+              <span style="font-size:1.25rem;" aria-hidden="true">📚</span>
+              <div>
+                <div style="font-weight:600;font-size:.9375rem;">Documentation</div>
+                <div style="font-size:.8125rem;color:var(--color-text-muted);">Integration guides and API reference</div>
+              </div>
+            </a>
+          </li>
+          <li>
+            <a href="contact.html" id="error-link-contact" data-testid="error-link-contact" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-radius:var(--radius-md);color:var(--color-text);text-decoration:none;transition:background-color var(--transition);" onmouseover="this.style.background='var(--color-border)'" onmouseout="this.style.background=''">
+              <span style="font-size:1.25rem;" aria-hidden="true">✉️</span>
+              <div>
+                <div style="font-weight:600;font-size:.9375rem;">Contact</div>
+                <div style="font-size:.8125rem;color:var(--color-text-muted);">We reply within one business day</div>
+              </div>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ── Site Footer ──────────────────────────────────────── -->
+  <footer class="site-footer" id="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="site-footer__grid">
+        <div class="site-footer__brand">
+          <a href="index.html" class="site-footer__logo" id="footer-logo" data-testid="footer-logo">
+            <span class="site-footer__logo-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </span>
+            Lumen
+          </a>
+          <p>Privacy-first, cookieless web &amp; product analytics. Open-source, self-hostable, and built for developers who care about their users.</p>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Product</p>
+          <ul class="site-footer__links">
+            <li><a href="index.html#features" class="site-footer__link" id="footer-link-features"  data-testid="footer-link-features">Features</a></li>
+            <li><a href="pricing.html"         class="site-footer__link" id="footer-link-pricing"   data-testid="footer-link-pricing">Pricing</a></li>
+            <li><a href="blog-post.html"        class="site-footer__link" id="footer-link-docs"      data-testid="footer-link-docs">Docs</a></li>
+            <li><a href="blog.html"             class="site-footer__link" id="footer-link-changelog" data-testid="footer-link-changelog">Changelog</a></li>
+          </ul>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Resources</p>
+          <ul class="site-footer__links">
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-blog"    data-testid="footer-link-blog">Blog</a></li>
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-guides"  data-testid="footer-link-guides">Guides</a></li>
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-api-ref" data-testid="footer-link-api-ref">API Reference</a></li>
+            <li><a href="404.html"  class="site-footer__link" id="footer-link-status"  data-testid="footer-link-status">Status</a></li>
+          </ul>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Company</p>
+          <ul class="site-footer__links">
+            <li><a href="contact.html" class="site-footer__link" id="footer-link-contact"  data-testid="footer-link-contact">Contact</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-privacy"   data-testid="footer-link-privacy">Privacy policy</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-terms"     data-testid="footer-link-terms">Terms of service</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-security"  data-testid="footer-link-security">Security</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="site-footer__bottom">
+        <p id="footer-copyright" data-testid="footer-copyright">&copy; 2025 Lumen Analytics. Open-source under MIT.</p>
+        <nav class="site-footer__legal" aria-label="Legal">
+          <a href="404.html" class="site-footer__link" id="footer-legal-privacy" data-testid="footer-legal-privacy">Privacy</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-terms"   data-testid="footer-legal-terms">Terms</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-cookies" data-testid="footer-legal-cookies">Cookies (none!)</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

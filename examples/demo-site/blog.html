@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Articles, guides, and deep-dives on privacy-first analytics, product measurement, and web performance from the Lumen team." />
+  <title>Blog — Lumen Analytics</title>
+  <!-- STATFLOW_TRACKER -->
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+
+  <!-- ── Site Header ──────────────────────────────────────── -->
+  <header class="site-header" id="site-header" role="banner">
+    <div class="container">
+      <div class="site-header__inner">
+
+        <a href="index.html" class="site-logo" id="logo-home" data-testid="site-logo" aria-label="Lumen Analytics home">
+          <span class="site-logo__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </span>
+          Lumen
+        </a>
+
+        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+          <a href="index.html"    class="site-nav__link" id="nav-home"    data-testid="nav-home"   >Home</a>
+          <a href="pricing.html"  class="site-nav__link" id="nav-pricing"  data-testid="nav-pricing">Pricing</a>
+          <a href="blog.html"     class="site-nav__link" id="nav-blog"     data-testid="nav-blog"  >Blog</a>
+          <a href="contact.html"  class="site-nav__link" id="nav-contact"  data-testid="nav-contact">Contact</a>
+        </nav>
+
+        <div class="site-header__actions" id="header-actions">
+          <a href="contact.html" class="btn btn--ghost btn--sm"   id="header-btn-login" data-testid="header-btn-login" data-action="login">Sign in</a>
+          <a href="pricing.html" class="btn btn--primary btn--sm" id="header-btn-cta"   data-testid="header-btn-cta"  data-action="start-trial">Get started free</a>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <!-- ── Page header ───────────────────────────────────── -->
+    <section class="page-header" id="blog-header" aria-labelledby="blog-page-title">
+      <div class="container">
+        <span class="section__eyebrow">Blog</span>
+        <h1 class="page-header__title" id="blog-page-title">From the Lumen team</h1>
+        <p class="page-header__subtitle">Deep-dives on privacy-first analytics, product measurement, and open-source engineering.</p>
+      </div>
+    </section>
+
+    <!-- ── Filter tabs ────────────────────────────────────── -->
+    <section class="section" id="blog-list" data-testid="blog-section" aria-labelledby="blog-page-title" style="padding-top:var(--space-12);">
+      <div class="container">
+
+        <div id="blog-filters" data-testid="blog-filters" role="list" style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-bottom:var(--space-10);" aria-label="Filter posts by topic">
+          <button class="btn btn--primary btn--sm" id="filter-all"       data-testid="filter-all"       data-filter="all"       role="listitem">All</button>
+          <button class="btn btn--ghost btn--sm"   id="filter-analytics" data-testid="filter-analytics" data-filter="analytics" role="listitem">Analytics</button>
+          <button class="btn btn--ghost btn--sm"   id="filter-product"   data-testid="filter-product"   data-filter="product"   role="listitem">Product</button>
+          <button class="btn btn--ghost btn--sm"   id="filter-privacy"   data-testid="filter-privacy"   data-filter="privacy"   role="listitem">Privacy</button>
+          <button class="btn btn--ghost btn--sm"   id="filter-guide"     data-testid="filter-guide"     data-filter="guide"     role="listitem">Guides</button>
+        </div>
+
+        <!-- Featured post -->
+        <article class="blog-card" id="blog-post-featured" data-testid="blog-post-featured" data-category="analytics"
+                 style="display:grid;grid-template-columns:1fr 1fr;margin-bottom:var(--space-10);" aria-labelledby="blog-post-featured-title">
+          <div class="blog-card__thumb" style="height:100%;min-height:240px;background:linear-gradient(135deg,var(--color-primary-light),var(--color-accent-light));">
+            <span aria-hidden="true">📊</span>
+          </div>
+          <div class="blog-card__body">
+            <span class="blog-card__tag blog-card__tag--analytics">Analytics</span>
+            <h2 class="blog-card__title" id="blog-post-featured-title">
+              <a href="blog-post.html" id="blog-link-featured" data-testid="blog-link-featured" data-post-id="how-cookieless-analytics-works">
+                How cookieless analytics actually works — a technical deep-dive
+              </a>
+            </h2>
+            <p style="font-size:.9375rem;color:var(--color-text-muted);line-height:1.65;margin-top:var(--space-3);">
+              Most tutorials hand-wave over the hard parts. Here we trace an event from your visitor's browser all the way through the ingestion pipeline to ClickHouse — and explain every privacy trade-off along the way.
+            </p>
+            <div class="blog-card__meta">
+              <span>Elena Voss</span>
+              <span class="blog-card__meta-dot" aria-hidden="true"></span>
+              <time datetime="2025-04-10">Apr 10, 2025</time>
+              <span class="blog-card__meta-dot" aria-hidden="true"></span>
+              <span>12 min read</span>
+            </div>
+            <a href="blog-post.html" class="btn btn--secondary btn--sm" style="margin-top:var(--space-6);align-self:flex-start;"
+               id="blog-btn-featured" data-testid="blog-btn-featured" data-action="read-post" data-post-id="how-cookieless-analytics-works">
+              Read article
+            </a>
+          </div>
+        </article>
+
+        <!-- Post grid -->
+        <div class="blog-grid" id="blog-grid" data-testid="blog-grid">
+
+          <article class="blog-card" id="blog-post-1" data-testid="blog-post-1" data-category="privacy" aria-labelledby="blog-post-1-title">
+            <div class="blog-card__thumb" style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);">
+              <span aria-hidden="true">🔒</span>
+            </div>
+            <div class="blog-card__body">
+              <span class="blog-card__tag blog-card__tag--privacy">Privacy</span>
+              <h3 class="blog-card__title" id="blog-post-1-title">
+                <a href="blog-post.html" id="blog-link-1" data-testid="blog-link-1" data-post-id="gdpr-analytics-without-consent">
+                  GDPR analytics without a consent banner — what's actually legal?
+                </a>
+              </h3>
+              <div class="blog-card__meta">
+                <span>Marc Dupuis</span>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <time datetime="2025-03-28">Mar 28, 2025</time>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <span>8 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="blog-card" id="blog-post-2" data-testid="blog-post-2" data-category="product" aria-labelledby="blog-post-2-title">
+            <div class="blog-card__thumb" style="background:linear-gradient(135deg,var(--color-accent-light),#e9d5ff);">
+              <span aria-hidden="true">🗺️</span>
+            </div>
+            <div class="blog-card__body">
+              <span class="blog-card__tag blog-card__tag--product">Product</span>
+              <h3 class="blog-card__title" id="blog-post-2-title">
+                <a href="blog-post.html" id="blog-link-2" data-testid="blog-link-2" data-post-id="user-journey-maps">
+                  Building user journey maps from raw event streams
+                </a>
+              </h3>
+              <div class="blog-card__meta">
+                <span>Priya Mehta</span>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <time datetime="2025-03-14">Mar 14, 2025</time>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <span>10 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="blog-card" id="blog-post-3" data-testid="blog-post-3" data-category="guide" aria-labelledby="blog-post-3-title">
+            <div class="blog-card__thumb" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">
+              <span aria-hidden="true">🚀</span>
+            </div>
+            <div class="blog-card__body">
+              <span class="blog-card__tag blog-card__tag--guide">Guide</span>
+              <h3 class="blog-card__title" id="blog-post-3-title">
+                <a href="blog-post.html" id="blog-link-3" data-testid="blog-link-3" data-post-id="self-host-lumen-5-minutes">
+                  Self-hosting Lumen in under 5 minutes with Docker Compose
+                </a>
+              </h3>
+              <div class="blog-card__meta">
+                <span>Tom Fischer</span>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <time datetime="2025-02-27">Feb 27, 2025</time>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <span>6 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="blog-card" id="blog-post-4" data-testid="blog-post-4" data-category="analytics" aria-labelledby="blog-post-4-title">
+            <div class="blog-card__thumb" style="background:linear-gradient(135deg,var(--color-primary-light),#bfdbfe);">
+              <span aria-hidden="true">🔥</span>
+            </div>
+            <div class="blog-card__body">
+              <span class="blog-card__tag blog-card__tag--analytics">Analytics</span>
+              <h3 class="blog-card__title" id="blog-post-4-title">
+                <a href="blog-post.html" id="blog-link-4" data-testid="blog-link-4" data-post-id="heatmaps-at-scale">
+                  Rendering heatmaps at scale: lessons from 50B click events
+                </a>
+              </h3>
+              <div class="blog-card__meta">
+                <span>Elena Voss</span>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <time datetime="2025-02-06">Feb 6, 2025</time>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <span>15 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="blog-card" id="blog-post-5" data-testid="blog-post-5" data-category="product" aria-labelledby="blog-post-5-title">
+            <div class="blog-card__thumb" style="background:linear-gradient(135deg,#e0f2fe,#bae6fd);">
+              <span aria-hidden="true">📐</span>
+            </div>
+            <div class="blog-card__body">
+              <span class="blog-card__tag blog-card__tag--product">Product</span>
+              <h3 class="blog-card__title" id="blog-post-5-title">
+                <a href="blog-post.html" id="blog-link-5" data-testid="blog-link-5" data-post-id="funnel-analysis-clickhouse">
+                  Funnel analysis with ClickHouse window functions
+                </a>
+              </h3>
+              <div class="blog-card__meta">
+                <span>Priya Mehta</span>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <time datetime="2025-01-22">Jan 22, 2025</time>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <span>11 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="blog-card" id="blog-post-6" data-testid="blog-post-6" data-category="guide" aria-labelledby="blog-post-6-title">
+            <div class="blog-card__thumb" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+              <span aria-hidden="true">📦</span>
+            </div>
+            <div class="blog-card__body">
+              <span class="blog-card__tag blog-card__tag--guide">Guide</span>
+              <h3 class="blog-card__title" id="blog-post-6-title">
+                <a href="blog-post.html" id="blog-link-6" data-testid="blog-link-6" data-post-id="tracker-custom-events-guide">
+                  Tracking custom events: the complete integration guide
+                </a>
+              </h3>
+              <div class="blog-card__meta">
+                <span>Tom Fischer</span>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <time datetime="2025-01-08">Jan 8, 2025</time>
+                <span class="blog-card__meta-dot" aria-hidden="true"></span>
+                <span>9 min read</span>
+              </div>
+            </div>
+          </article>
+
+        </div>
+
+        <!-- Pagination -->
+        <nav class="text-center mt-12" id="blog-pagination" data-testid="blog-pagination" aria-label="Blog pagination">
+          <button class="btn btn--ghost" id="pagination-prev" data-testid="pagination-prev" disabled aria-disabled="true">
+            &larr; Previous
+          </button>
+          <span style="padding-inline:var(--space-4);font-size:.9375rem;color:var(--color-text-muted);">Page 1 of 3</span>
+          <button class="btn btn--ghost" id="pagination-next" data-testid="pagination-next">
+            Next &rarr;
+          </button>
+        </nav>
+
+      </div>
+    </section>
+
+    <!-- ── Newsletter ─────────────────────────────────────── -->
+    <section class="section section--alt" id="newsletter" data-testid="newsletter-section" aria-labelledby="newsletter-title">
+      <div class="container" style="max-width:640px;text-align:center;">
+        <span class="section__eyebrow">Stay in the loop</span>
+        <h2 class="section__title" id="newsletter-title">New posts, straight to your inbox</h2>
+        <p class="section__subtitle">No spam. Unsubscribe any time. We publish roughly twice a month.</p>
+        <form id="newsletter-form" data-testid="newsletter-form" style="display:flex;gap:var(--space-3);margin-top:var(--space-8);flex-wrap:wrap;justify-content:center;" novalidate>
+          <input
+            type="email"
+            class="form-control"
+            id="newsletter-email"
+            data-testid="newsletter-email"
+            name="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+            style="flex:1;min-width:220px;"
+            aria-label="Email address"
+          />
+          <button type="submit" class="btn btn--primary" id="newsletter-submit" data-testid="newsletter-submit" data-action="newsletter-subscribe">
+            Subscribe
+          </button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Site Footer ──────────────────────────────────────── -->
+  <footer class="site-footer" id="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="site-footer__grid">
+        <div class="site-footer__brand">
+          <a href="index.html" class="site-footer__logo" id="footer-logo" data-testid="footer-logo">
+            <span class="site-footer__logo-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </span>
+            Lumen
+          </a>
+          <p>Privacy-first, cookieless web &amp; product analytics. Open-source, self-hostable, and built for developers who care about their users.</p>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Product</p>
+          <ul class="site-footer__links">
+            <li><a href="index.html#features" class="site-footer__link" id="footer-link-features"  data-testid="footer-link-features">Features</a></li>
+            <li><a href="pricing.html"         class="site-footer__link" id="footer-link-pricing"   data-testid="footer-link-pricing">Pricing</a></li>
+            <li><a href="blog-post.html"        class="site-footer__link" id="footer-link-docs"      data-testid="footer-link-docs">Docs</a></li>
+            <li><a href="blog.html"             class="site-footer__link" id="footer-link-changelog" data-testid="footer-link-changelog">Changelog</a></li>
+          </ul>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Resources</p>
+          <ul class="site-footer__links">
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-blog"    data-testid="footer-link-blog">Blog</a></li>
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-guides"  data-testid="footer-link-guides">Guides</a></li>
+            <li><a href="blog.html" class="site-footer__link" id="footer-link-api-ref" data-testid="footer-link-api-ref">API Reference</a></li>
+            <li><a href="404.html"  class="site-footer__link" id="footer-link-status"  data-testid="footer-link-status">Status</a></li>
+          </ul>
+        </div>
+        <div class="site-footer__col">
+          <p class="site-footer__col-title">Company</p>
+          <ul class="site-footer__links">
+            <li><a href="contact.html" class="site-footer__link" id="footer-link-contact"  data-testid="footer-link-contact">Contact</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-privacy"   data-testid="footer-link-privacy">Privacy policy</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-terms"     data-testid="footer-link-terms">Terms of service</a></li>
+            <li><a href="404.html"     class="site-footer__link" id="footer-link-security"  data-testid="footer-link-security">Security</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="site-footer__bottom">
+        <p id="footer-copyright" data-testid="footer-copyright">&copy; 2025 Lumen Analytics. Open-source under MIT.</p>
+        <nav class="site-footer__legal" aria-label="Legal">
+          <a href="404.html" class="site-footer__link" id="footer-legal-privacy" data-testid="footer-legal-privacy">Privacy</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-terms"   data-testid="footer-legal-terms">Terms</a>
+          <a href="404.html" class="site-footer__link" id="footer-legal-cookies" data-testid="footer-legal-cookies">Cookies (none!)</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+  <script>
+    // Newsletter form: prevent default, show inline feedback
+    document.addEventListener('DOMContentLoaded', function () {
+      var form   = document.getElementById('newsletter-form');
+      var submit = document.getElementById('newsletter-submit');
+      if (!form) return;
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        submit.disabled = true;
+        submit.textContent = 'Subscribed!';
+        setTimeout(function () {
+          form.reset();
+          submit.disabled = false;
+          submit.textContent = 'Subscribe';
+        }, 3000);
+      });
+
+      // Blog filter buttons (purely visual for e2e — no real filtering needed)
+      var filters = document.querySelectorAll('[data-filter]');
+      filters.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          filters.forEach(function (b) {
+            b.classList.remove('btn--primary');
+            b.classList.add('btn--ghost');
+          });
+          btn.classList.remove('btn--ghost');
+          btn.classList.add('btn--primary');
+        });
+      });
+    });
+  </script>
+</body>
+</html>
