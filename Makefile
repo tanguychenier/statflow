@@ -78,26 +78,32 @@ help: ## Print this help message
 
 .PHONY: setup
 setup: ## One-command bootstrap from a fresh clone (idempotent — safe to re-run)
-	@echo -e "$(BOLD)$(CYAN)[1/7] Building service images…$(RESET)"
+	@echo -e "$(BOLD)$(CYAN)[1/8] Provisioning local .env (generated secrets)…$(RESET)"
+	@$(MAKE) env
+	@echo -e "$(BOLD)$(CYAN)[2/8] Building service images…$(RESET)"
 	@$(COMPOSE) build
-	@echo -e "$(BOLD)$(CYAN)[2/7] Installing dependencies (Composer + pnpm)…$(RESET)"
+	@echo -e "$(BOLD)$(CYAN)[3/8] Installing dependencies (Composer + pnpm)…$(RESET)"
 	@$(MAKE) install
-	@echo -e "$(BOLD)$(CYAN)[3/7] Provisioning local secrets (JWT keypair + INSTALL_SECRET)…$(RESET)"
+	@echo -e "$(BOLD)$(CYAN)[4/8] Provisioning local secrets (JWT keypair + INSTALL_SECRET)…$(RESET)"
 	@$(MAKE) secrets
-	@echo -e "$(BOLD)$(CYAN)[4/7] Starting data services and waiting for healthy…$(RESET)"
+	@echo -e "$(BOLD)$(CYAN)[5/8] Starting data services and waiting for healthy…$(RESET)"
 	@$(MAKE) up-data
-	@echo -e "$(BOLD)$(CYAN)[5/7] Running application database migrations…$(RESET)"
+	@echo -e "$(BOLD)$(CYAN)[6/8] Running application database migrations…$(RESET)"
 	@$(MAKE) db-migrate
-	@echo -e "$(BOLD)$(CYAN)[6/7] Creating and migrating the test database (statflow_test)…$(RESET)"
+	@echo -e "$(BOLD)$(CYAN)[7/8] Creating and migrating the test database (statflow_test)…$(RESET)"
 	@$(MAKE) db-test-setup
-	@echo -e "$(BOLD)$(CYAN)[7/7] Starting backend + frontend…$(RESET)"
+	@echo -e "$(BOLD)$(CYAN)[8/8] Starting backend + frontend…$(RESET)"
 	@$(COMPOSE) up -d backend frontend
 	@echo ""
 	@echo -e "$(GREEN)$(BOLD)Setup complete.$(RESET)"
 	@# Source .env (if present) so the printed ports match what compose used.
 	@set -a; [ -f "$(ROOT)/.env" ] && . "$(ROOT)/.env"; set +a; \
-	    echo -e "  Backend : http://localhost:$${BACKEND_PORT:-8000}"; \
+	    echo -e "  Backend : http://localhost:$${BACKEND_PORT:-8001}"; \
 	    echo -e "  Frontend: http://localhost:$${FRONTEND_PORT:-5173}"
+
+.PHONY: env
+env: ## Bootstrap the root .env from .env.example with generated secrets (idempotent)
+	@sh "$(ROOT)/scripts/bootstrap-env.sh"
 
 .PHONY: secrets
 secrets: ## Generate the JWT keypair + INSTALL_SECRET into apps/backend/.env.local (idempotent)
@@ -105,11 +111,11 @@ secrets: ## Generate the JWT keypair + INSTALL_SECRET into apps/backend/.env.loc
 	    sh scripts/generate-secrets.sh
 
 .PHONY: up
-up: ## Start all services in the background
+up: env ## Start all services in the background
 	$(COMPOSE) up -d
 
 .PHONY: up-data
-up-data: ## Start the data services (postgres/redis/clickhouse) and wait until healthy
+up-data: env ## Start the data services (postgres/redis/clickhouse) and wait until healthy
 	$(COMPOSE) up -d --wait $(DATA_SERVICES)
 
 .PHONY: down

@@ -96,7 +96,7 @@ services:
     container_name: statflow-frontend
     environment:
       # Vite exposes these as import.meta.env.VITE_* inside the SPA
-      VITE_API_BASE_URL:  "${VITE_API_BASE_URL:-http://localhost:8000}"
+      VITE_API_BASE_URL:  "${VITE_API_BASE_URL:-http://localhost:8001}"
       VITE_APP_VERSION:   "${VITE_APP_VERSION:-0.1.0-dev}"
     working_dir: /app
     # Run as the host owner uid (1000) so workspace installs and the Vite dev
