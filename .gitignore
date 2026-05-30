@@ -91,3 +91,6 @@ gitleaks-report.json
 
 # Internal QA audit reports — not part of the public deliverable
 docs/qa/
+
+# Claude Code local settings — never commit
+.claude/
