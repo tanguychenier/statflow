@@ -1,0 +1,16 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "selector-class-pattern": null,
+    "custom-property-pattern": "^sf-.+|^color-.+|^font-.+|^spacing-.+|^radius-.+|^shadow-.+",
+    "declaration-no-important": true,
+    "no-descending-specificity": null,
+    "import-notation": "string"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.vue"],
+      "customSyntax": "postcss-html"
+    }
+  ]
+}

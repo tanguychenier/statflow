@@ -1,0 +1,635 @@
+{
+  "publicDashboard": {
+    "header": {
+      "title": "Analytics",
+      "titleFor": "Analytics for {site}",
+      "poweredBy": "Powered by Statflow — free",
+      "poweredByShort": "Powered by"
+    },
+    "metrics": {
+      "aria": "Key metrics",
+      "sessions": "Sessions",
+      "users": "Users",
+      "pageviews": "Page views",
+      "bounceRate": "Bounce rate",
+      "avgDuration": "Avg. duration"
+    },
+    "password": {
+      "aria": "Password-protected dashboard",
+      "title": "Password required",
+      "subtitle": "This dashboard is protected. Enter the password to continue.",
+      "label": "Password",
+      "placeholder": "Enter password",
+      "submit": "View dashboard",
+      "invalid": "Incorrect password. Please try again.",
+      "show": "Show password",
+      "hide": "Hide password"
+    },
+    "notFound": {
+      "title": "Dashboard unavailable",
+      "description": "This share link is invalid, has expired, or sharing has been turned off."
+    },
+    "error": {
+      "title": "Couldn't load this dashboard",
+      "description": "Something went wrong while fetching the data. Please try again."
+    }
+  },
+  "pagesSources": {
+    "title": "Pages & Sources",
+    "tabs": {
+      "pages": "Pages",
+      "entryPages": "Entry pages",
+      "exitPages": "Exit pages",
+      "sources": "Sources",
+      "referrers": "Referrers",
+      "utm": "UTM"
+    },
+    "metrics": {
+      "visitors": "Visitors",
+      "pageviews": "Page views",
+      "bounceRate": "Bounce rate",
+      "avgDuration": "Avg. duration"
+    },
+    "toolbar": {
+      "metric": "Metric",
+      "export": "Export this table as CSV"
+    },
+    "search": {
+      "pages": "Search /path…",
+      "sources": "Search sources…",
+      "referrers": "Search referrers…",
+      "utm": "Search UTM values…"
+    },
+    "filters": {
+      "add": "Add filter"
+    },
+    "direct": "Direct / none",
+    "none": "(none)",
+    "pagination": {
+      "range": "Showing {start}–{end} of {total}",
+      "page": "Page {page} of {pageCount}",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "detail": {
+      "trend": "Trend over time",
+      "metrics": "Metrics"
+    },
+    "empty": {
+      "title": "No data for this view",
+      "description": "Try a different date range or remove some filters."
+    },
+    "errors": {
+      "loadFailed": "Failed to load",
+      "loadFailedHint": "Something went wrong while loading this table."
+    },
+    "export": {
+      "success": "Export downloaded"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "loading": "Loading…",
+    "retry": "Retry",
+    "noData": "No data available",
+    "viewAll": "View all",
+    "export": "Export",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "close": "Close",
+    "back": "Back",
+    "confirm": "Confirm",
+    "edit": "Edit",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "days": "{count} day | {count} days",
+    "sessions": "{count} session | {count} sessions",
+    "users": "{count} user | {count} users",
+    "pageviews": "{count} pageview | {count} pageviews"
+  },
+  "nav": {
+    "overview": "Overview",
+    "realtime": "Realtime",
+    "behaviour": "Behaviour",
+    "heatmaps": "Heatmaps",
+    "clickMaps": "Click maps",
+    "sessionRecordings": "Session recordings",
+    "pagesAndSources": "Pages & Sources",
+    "funnels": "Funnels",
+    "retention": "Retention",
+    "journeys": "Journeys",
+    "settings": "Settings"
+  },
+  "overview": {
+    "title": "Overview",
+    "metrics": {
+      "sessions": "Sessions",
+      "users": "Users",
+      "pageviews": "Page views",
+      "bounceRate": "Bounce rate",
+      "avgDuration": "Avg. duration",
+      "events": "Events",
+      "conversionRate": "Conversion rate",
+      "aria": "Key metrics"
+    },
+    "charts": {
+      "sessionsOverTime": "Sessions over time",
+      "topPages": "Top pages",
+      "trafficSources": "Traffic sources",
+      "devices": "Devices",
+      "geography": "Geography"
+    },
+    "comparison": {
+      "label": "vs. {period}",
+      "prevPeriod": "previous period",
+      "prevYear": "previous year"
+    },
+    "granularity": {
+      "hourly": "Hourly",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    },
+    "topCountries": "Top countries",
+    "toolbar": {
+      "granularity": "Chart granularity",
+      "compare": "Compare to previous period",
+      "export": "Export the dashboard as CSV"
+    },
+    "errors": {
+      "loadFailed": "Failed to load",
+      "loadFailedHint": "Something went wrong while fetching this data."
+    },
+    "export": {
+      "success": "Export ready — your download has started"
+    }
+  },
+  "realtime": {
+    "title": "Realtime",
+    "live": "Live",
+    "activeUsers": "Active users",
+    "updatedAgo": "updated {time}",
+    "secondsAgo": "{count}s ago | {count}s ago",
+    "liveEvents": "Live event stream",
+    "connecting": "Connecting to the live stream…",
+    "pause": "Pause",
+    "resume": "Resume",
+    "newEvents": "{count} new event | {count} new events",
+    "countries": "Countries",
+    "topPages": "Top active pages",
+    "topReferrers": "Top referrers",
+    "trend": {
+      "title": "Active users — 30-min trend"
+    },
+    "kpis": {
+      "aria": "Live key metrics",
+      "topPage": "Top page",
+      "eventsPerMinute": "Events / min",
+      "mobileShare": "Mobile share"
+    },
+    "status": {
+      "connecting": "connecting…",
+      "reconnecting": "reconnecting…"
+    },
+    "empty": {
+      "title": "No live activity yet",
+      "description": "Events will appear here as visitors browse your site."
+    },
+    "noSite": {
+      "title": "No site selected",
+      "description": "Choose a site to start watching live traffic."
+    },
+    "errors": {
+      "streamFailed": "Live stream interrupted"
+    }
+  },
+  "funnels": {
+    "title": "Funnels",
+    "newFunnel": "New funnel",
+    "editFunnel": "Edit funnel",
+    "deleteFunnel": "Delete funnel",
+    "openFunnel": "Open funnel {name}",
+    "breadcrumb": "Funnel navigation",
+    "overallConversion": "Overall conversion",
+    "overallShort": "{pct} overall",
+    "totalEntered": "Total entered",
+    "enteredSessions": "{count} sessions",
+    "medianTime": "Median time to convert",
+    "lastEdited": "Last edited {time}",
+    "stepsCount": "{count} step | {count} steps",
+    "step": "Step {n}",
+    "continued": "{pct}% continued",
+    "dropped": "{pct}% dropped",
+    "conversionWindow": "Conversion window",
+    "chart": {
+      "title": "Conversion by step"
+    },
+    "breakdown": {
+      "title": "Breakdown",
+      "groupBy": "Group by"
+    },
+    "trend": {
+      "title": "Conversion over time",
+      "series": "Conversion rate"
+    },
+    "builder": {
+      "title": "Funnel name",
+      "namePlaceholder": "e.g. Checkout funnel",
+      "steps": "Steps",
+      "stepCount": "{current} of {max} steps",
+      "addStep": "Add step",
+      "eventType": "Event type",
+      "stepLabel": "Label for step {n}",
+      "labelPlaceholder": "Step label (optional)",
+      "matcher": "Match value for step {n}",
+      "urlPlaceholder": "/path or /path/*",
+      "eventPlaceholder": "Event name",
+      "conditions": "Conditions",
+      "addCondition": "Add condition",
+      "moveUp": "Move step up",
+      "moveDown": "Move step down",
+      "removeStep": "Remove step {n}",
+      "windowDays": "{count} day | {count} days",
+      "countBy": "Count by",
+      "uniqueUsers": "Unique users",
+      "sessions": "Sessions",
+      "save": "Save funnel",
+      "triggers": {
+        "pageview": "Page view",
+        "event": "Event"
+      },
+      "errors": {
+        "name": {
+          "required": "A funnel name is required.",
+          "tooLong": "The name is too long."
+        },
+        "steps": {
+          "tooFew": "A funnel needs at least two steps."
+        }
+      }
+    },
+    "deleteConfirm": {
+      "title": "Delete this funnel?",
+      "description": "“{name}” will be permanently removed. This cannot be undone."
+    },
+    "toast": {
+      "created": "Funnel created",
+      "updated": "Funnel updated",
+      "deleted": "Funnel deleted"
+    },
+    "empty": {
+      "title": "No funnels yet",
+      "description": "Create a funnel to measure how users move through key flows on your site.",
+      "action": "Create your first funnel"
+    }
+  },
+  "heatmaps": {
+    "title": "Heatmaps",
+    "viewTypes": {
+      "clicks": "Clicks",
+      "scroll": "Scroll",
+      "movement": "Movement",
+      "rageClicks": "Rage clicks"
+    },
+    "stats": {
+      "totalClicks": "Total clicks",
+      "uniqueUsers": "Unique users",
+      "sampleSize": "Sample size"
+    },
+    "topElements": "Top elements",
+    "scrollDepth": "Scroll depth",
+    "intensity": "Intensity",
+    "radius": "Radius",
+    "openFullscreen": "Open in fullscreen",
+    "exitFullscreen": "Exit fullscreen",
+    "viewTypeLabel": "Heatmap view type",
+    "pageLabel": "Page",
+    "deviceLabel": "Device",
+    "segmentLabel": "Segment",
+    "allVisitors": "All visitors",
+    "devices": {
+      "desktop": "Desktop",
+      "tablet": "Tablet",
+      "mobile": "Mobile"
+    },
+    "panel": {
+      "title": "Statistics"
+    },
+    "empty": {
+      "title": "No interactions recorded",
+      "description": "There is no data for this page, device and period yet. Try a different page or widen the date range."
+    },
+    "scroll": {
+      "fold": "Median fold — {pct}"
+    },
+    "insights": {
+      "rageTitle": "Rage clicks",
+      "rageBadge": "Frustration",
+      "rageHint": "Elements repeatedly clicked in quick succession — often a sign of an unresponsive control.",
+      "deadTitle": "Dead clicks",
+      "deadBadge": "No effect",
+      "deadHint": "Clicks that triggered no navigation, network or DOM change — users expected something to happen.",
+      "none": "No frustration signals on this page."
+    },
+    "pages": {
+      "searchPlaceholder": "Search pages…",
+      "sortBy": "Sort pages by",
+      "mostClicks": "Most clicks",
+      "path": "Path",
+      "clicksCount": "{count} clicks",
+      "noMatch": "No pages match your search."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "sections": {
+      "general": "General",
+      "tracking": "Tracking",
+      "goals": "Goals",
+      "team": "Team",
+      "sharedDashboards": "Shared dashboards",
+      "dangerZone": "Danger zone"
+    },
+    "actions": {
+      "saveChanges": "Save changes",
+      "add": "Add",
+      "remove": "Remove"
+    },
+    "noSite": {
+      "title": "No site selected",
+      "description": "Add a site to configure its tracking and team."
+    },
+    "general": {
+      "siteName": "Site name",
+      "domain": "Domain",
+      "domainHint": "The primary domain you are tracking, without protocol or path.",
+      "timezone": "Timezone",
+      "trackingSnippet": "Tracking snippet",
+      "trackingActive": "Tracking active",
+      "lastEvent": "Last event {time} ago",
+      "errors": {
+        "nameRequired": "Enter a site name.",
+        "domainInvalid": "Enter a valid domain such as example.com."
+      }
+    },
+    "tracker": {
+      "snippetHint": "Paste this in the <head> of every page you want to track.",
+      "publicKey": "Public site key",
+      "rotateKey": "Rotate key",
+      "rotateHint": "Issue a new public key. Update your snippet before the old key expires.",
+      "rotated": "Key rotated",
+      "gracePeriod": "The previous key keeps working until {date}.",
+      "rotateConfirm": {
+        "title": "Rotate the public site key?",
+        "description": "A new key is issued immediately. The current key keeps working for a short grace period so you can redeploy your snippet."
+      }
+    },
+    "tracking": {
+      "cookielessNote": "Statflow is cookieless by design. No cookies are set and no cross-site identifiers are stored — this cannot be changed.",
+      "excludedIps": {
+        "label": "Excluded IP addresses",
+        "hint": "Visits from these IPs or CIDR ranges are not tracked. Up to {max}.",
+        "placeholder": "203.0.113.4 or 2001:db8::/32",
+        "empty": "No addresses excluded.",
+        "invalid": "Some entries are not valid IP addresses or CIDR ranges."
+      },
+      "allowedDomains": {
+        "label": "Allowed domains",
+        "hint": "Only these origins may send events. Wildcards like *.example.com are allowed. Up to {max}.",
+        "placeholder": "example.com or *.example.com",
+        "empty": "All origins allowed (not recommended in production).",
+        "invalid": "Some entries are not valid domains."
+      },
+      "retention": {
+        "label": "Data retention",
+        "custom": "Custom…",
+        "customLabel": "Custom retention (days)",
+        "range": "Between {min} and {max} days.",
+        "invalid": "Enter a value between 30 and 730 days."
+      },
+      "stripQuery": {
+        "label": "Strip query parameters from URLs"
+      },
+      "collect": {
+        "title": "Collection",
+        "clicks": "Track clicks",
+        "scroll": "Track scroll depth",
+        "engagement": "Measure engagement time",
+        "outbound": "Track outbound links",
+        "hashRouting": "Track hash-based routing"
+      }
+    },
+    "team": {
+      "invite": {
+        "email": "Email address",
+        "role": "Role",
+        "submit": "Send invite",
+        "emailInvalid": "Enter a valid email address."
+      },
+      "role": "Role",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "editor": "Editor",
+        "viewer": "Viewer"
+      },
+      "status": {
+        "invited": "Invited"
+      },
+      "changeRoleFor": "Change role for {name}",
+      "revokeFor": "Revoke access for {name}",
+      "revokeAccess": "Revoke access",
+      "joinedOn": "Joined {date}",
+      "empty": {
+        "title": "No team members yet",
+        "description": "Invite teammates to give them access to this site."
+      },
+      "legend": {
+        "title": "Role permissions",
+        "owner": "Full control, including billing and team deletion.",
+        "admin": "Manage sites, members, and API keys; access all data.",
+        "editor": "Create and edit sites, goals, funnels, segments, and reports.",
+        "viewer": "Read-only access to dashboards, analytics, and saved reports."
+      }
+    },
+    "danger": {
+      "resetData": "Reset all data",
+      "resetDataDesc": "Permanently delete all analytics data for this site. This cannot be undone.",
+      "deleteSite": "Delete site",
+      "deleteSiteDesc": "Permanently delete this site and all its data. This cannot be undone.",
+      "confirmName": "Type {name} to confirm"
+    },
+    "toast": {
+      "saved": "Changes saved",
+      "keyRotated": "Public key rotated",
+      "invited": "Invitation sent to {email}",
+      "roleUpdated": "Role updated",
+      "memberRemoved": "Member removed",
+      "siteDeleted": "Site deleted",
+      "resetUnavailable": "Data reset is not available yet."
+    }
+  },
+  "auth": {
+    "brand": "Statflow",
+    "themeToggle": {
+      "toLight": "Switch to light theme",
+      "toDark": "Switch to dark theme"
+    },
+    "passwordToggle": {
+      "show": "Show password",
+      "hide": "Hide password"
+    },
+    "login": {
+      "title": "Sign in to your account",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "forgot": "Forgot?",
+      "noAccount": "No account?",
+      "createOne": "Create one",
+      "welcomeBack": "Welcome back",
+      "welcomeBackDetail": "You are now signed in."
+    },
+    "register": {
+      "title": "Create your account",
+      "name": "Full name",
+      "namePlaceholder": "Ada Lovelace",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordHint": "At least 12 characters.",
+      "confirmPassword": "Confirm password",
+      "terms": "I agree to the {terms} and {privacy}",
+      "termsAria": "I agree to the Terms of Service and Privacy Policy",
+      "termsLink": "Terms of Service",
+      "privacyLink": "Privacy Policy",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "successTitle": "Account created",
+      "successDetail": "Check your inbox to verify your email."
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "description": "Enter your email and we'll send you a reset link.",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send reset link",
+      "submitting": "Sending…",
+      "backToLogin": "Back to sign in",
+      "successTitle": "Check your inbox",
+      "successDescription": "If an account exists for {email}, we've sent a password reset link. The link expires in 1 hour.",
+      "resend": "Use a different email"
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "description": "Enter a new password for your account.",
+      "password": "New password",
+      "passwordHint": "At least 12 characters.",
+      "confirmPassword": "Confirm new password",
+      "submit": "Reset password",
+      "submitting": "Resetting…",
+      "backToLogin": "Back to sign in",
+      "successTitle": "Password updated",
+      "successDescription": "Your password has been reset. You can now sign in with your new password.",
+      "missingToken": "This reset link is invalid or incomplete. Request a new one from the forgot-password page.",
+      "requestNewLink": "Request a new link"
+    },
+    "validation": {
+      "emailRequired": "Email is required.",
+      "emailInvalid": "Enter a valid email address.",
+      "nameRequired": "Name is required.",
+      "passwordRequired": "Password is required.",
+      "passwordTooShort": "Password must be at least 12 characters.",
+      "confirmRequired": "Please confirm your password.",
+      "passwordMismatch": "Passwords do not match.",
+      "termsRequired": "You must accept the terms to continue."
+    },
+    "errors": {
+      "invalidCredentials": "Incorrect email or password.",
+      "emailTaken": "An account with this email already exists.",
+      "validationFailed": "Please check the highlighted fields.",
+      "rateLimited": "Too many attempts. Please try again later.",
+      "invalidResetToken": "This reset link is invalid, expired, or already used.",
+      "network": "Can't reach the server. Check your connection and try again.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "commandPalette": {
+    "placeholder": "Search pages, settings, actions…",
+    "sections": {
+      "recent": "Recent",
+      "navigate": "Navigate",
+      "actions": "Actions"
+    },
+    "noResults": "No results for \"{query}\"",
+    "noResultsHint": "Check your spelling or try a different term."
+  },
+  "charts": {
+    "viewAsTable": "View as table",
+    "other": "Other"
+  },
+  "segments": {
+    "title": "Segments",
+    "newSegment": "New segment",
+    "addCondition": "Add condition",
+    "saveSegment": "Save segment"
+  },
+  "dimensions": {
+    "pathname": "Page",
+    "referrer_domain": "Referrer",
+    "utm_source": "UTM source",
+    "utm_medium": "UTM medium",
+    "utm_campaign": "UTM campaign",
+    "country": "Country",
+    "region": "Region",
+    "city": "City",
+    "device_type": "Device",
+    "browser": "Browser",
+    "os": "Operating system",
+    "language": "Language",
+    "entry_page": "Entry page",
+    "exit_page": "Exit page",
+    "event_name": "Event"
+  },
+  "operators": {
+    "eq": "is",
+    "neq": "is not",
+    "in": "is one of",
+    "not_in": "is not one of",
+    "contains": "contains",
+    "not_contains": "does not contain",
+    "starts_with": "starts with",
+    "gt": "greater than",
+    "gte": "at least",
+    "lt": "less than",
+    "lte": "at most"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "notFound": "Page not found",
+    "unauthorized": "Your session has expired. Please sign in again.",
+    "loadFailed": "Failed to load data",
+    "saveFailed": "Failed to save changes"
+  },
+  "dateRange": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "last90Days": "Last 90 days",
+    "thisMonth": "This month",
+    "lastMonth": "Last month",
+    "custom": "Custom range",
+    "compare": "Compare to",
+    "previousPeriod": "Previous period",
+    "previousYear": "Previous year",
+    "none": "No comparison"
+  }
+}

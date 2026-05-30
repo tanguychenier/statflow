@@ -1,0 +1,635 @@
+{
+  "publicDashboard": {
+    "header": {
+      "title": "Statistiques",
+      "titleFor": "Statistiques de {site}",
+      "poweredBy": "Propulsé par Statflow — gratuit",
+      "poweredByShort": "Propulsé par"
+    },
+    "metrics": {
+      "aria": "Indicateurs clés",
+      "sessions": "Sessions",
+      "users": "Utilisateurs",
+      "pageviews": "Pages vues",
+      "bounceRate": "Taux de rebond",
+      "avgDuration": "Durée moy."
+    },
+    "password": {
+      "aria": "Tableau de bord protégé par mot de passe",
+      "title": "Mot de passe requis",
+      "subtitle": "Ce tableau de bord est protégé. Saisissez le mot de passe pour continuer.",
+      "label": "Mot de passe",
+      "placeholder": "Saisissez le mot de passe",
+      "submit": "Afficher le tableau de bord",
+      "invalid": "Mot de passe incorrect. Veuillez réessayer.",
+      "show": "Afficher le mot de passe",
+      "hide": "Masquer le mot de passe"
+    },
+    "notFound": {
+      "title": "Tableau de bord indisponible",
+      "description": "Ce lien de partage est invalide, a expiré, ou le partage a été désactivé."
+    },
+    "error": {
+      "title": "Impossible de charger ce tableau de bord",
+      "description": "Une erreur est survenue lors de la récupération des données. Veuillez réessayer."
+    }
+  },
+  "pagesSources": {
+    "title": "Pages et sources",
+    "tabs": {
+      "pages": "Pages",
+      "entryPages": "Pages d'entrée",
+      "exitPages": "Pages de sortie",
+      "sources": "Sources",
+      "referrers": "Référents",
+      "utm": "UTM"
+    },
+    "metrics": {
+      "visitors": "Visiteurs",
+      "pageviews": "Pages vues",
+      "bounceRate": "Taux de rebond",
+      "avgDuration": "Durée moy."
+    },
+    "toolbar": {
+      "metric": "Métrique",
+      "export": "Exporter ce tableau en CSV"
+    },
+    "search": {
+      "pages": "Rechercher /chemin…",
+      "sources": "Rechercher des sources…",
+      "referrers": "Rechercher des référents…",
+      "utm": "Rechercher des valeurs UTM…"
+    },
+    "filters": {
+      "add": "Ajouter un filtre"
+    },
+    "direct": "Direct / aucun",
+    "none": "(aucun)",
+    "pagination": {
+      "range": "Affichage de {start} à {end} sur {total}",
+      "page": "Page {page} sur {pageCount}",
+      "prev": "Précédent",
+      "next": "Suivant"
+    },
+    "detail": {
+      "trend": "Évolution dans le temps",
+      "metrics": "Métriques"
+    },
+    "empty": {
+      "title": "Aucune donnée pour cette vue",
+      "description": "Essayez une autre plage de dates ou retirez des filtres."
+    },
+    "errors": {
+      "loadFailed": "Échec du chargement",
+      "loadFailedHint": "Une erreur est survenue lors du chargement de ce tableau."
+    },
+    "export": {
+      "success": "Export téléchargé"
+    }
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "loading": "Chargement…",
+    "retry": "Réessayer",
+    "noData": "Aucune donnée disponible",
+    "viewAll": "Tout voir",
+    "export": "Exporter",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "clear": "Effacer",
+    "close": "Fermer",
+    "back": "Retour",
+    "confirm": "Confirmer",
+    "edit": "Modifier",
+    "copy": "Copier",
+    "copied": "Copié !",
+    "days": "{count} jour | {count} jours",
+    "sessions": "{count} session | {count} sessions",
+    "users": "{count} utilisateur | {count} utilisateurs",
+    "pageviews": "{count} vue de page | {count} vues de pages"
+  },
+  "nav": {
+    "overview": "Vue d'ensemble",
+    "realtime": "Temps réel",
+    "behaviour": "Comportement",
+    "heatmaps": "Cartes de chaleur",
+    "clickMaps": "Cartes de clics",
+    "sessionRecordings": "Enregistrements de sessions",
+    "pagesAndSources": "Pages et sources",
+    "funnels": "Entonnoirs",
+    "retention": "Rétention",
+    "journeys": "Parcours",
+    "settings": "Paramètres"
+  },
+  "overview": {
+    "title": "Vue d'ensemble",
+    "metrics": {
+      "sessions": "Sessions",
+      "users": "Utilisateurs",
+      "pageviews": "Pages vues",
+      "bounceRate": "Taux de rebond",
+      "avgDuration": "Durée moy.",
+      "events": "Événements",
+      "conversionRate": "Taux de conversion",
+      "aria": "Indicateurs clés"
+    },
+    "charts": {
+      "sessionsOverTime": "Sessions dans le temps",
+      "topPages": "Pages principales",
+      "trafficSources": "Sources de trafic",
+      "devices": "Appareils",
+      "geography": "Géographie"
+    },
+    "comparison": {
+      "label": "vs. {period}",
+      "prevPeriod": "période précédente",
+      "prevYear": "année précédente"
+    },
+    "granularity": {
+      "hourly": "Par heure",
+      "daily": "Par jour",
+      "weekly": "Par semaine",
+      "monthly": "Par mois"
+    },
+    "topCountries": "Principaux pays",
+    "toolbar": {
+      "granularity": "Granularité du graphique",
+      "compare": "Comparer à la période précédente",
+      "export": "Exporter le tableau de bord en CSV"
+    },
+    "errors": {
+      "loadFailed": "Échec du chargement",
+      "loadFailedHint": "Une erreur est survenue lors de la récupération de ces données."
+    },
+    "export": {
+      "success": "Export prêt — le téléchargement a démarré"
+    }
+  },
+  "realtime": {
+    "title": "Temps réel",
+    "live": "En direct",
+    "activeUsers": "Utilisateurs actifs",
+    "updatedAgo": "mis à jour {time}",
+    "secondsAgo": "il y a {count} s | il y a {count} s",
+    "liveEvents": "Flux d'événements en direct",
+    "connecting": "Connexion au flux en direct…",
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "newEvents": "{count} nouvel événement | {count} nouveaux événements",
+    "countries": "Pays",
+    "topPages": "Pages actives principales",
+    "topReferrers": "Référents principaux",
+    "trend": {
+      "title": "Utilisateurs actifs — tendance sur 30 min"
+    },
+    "kpis": {
+      "aria": "Indicateurs clés en direct",
+      "topPage": "Page phare",
+      "eventsPerMinute": "Événements / min",
+      "mobileShare": "Part mobile"
+    },
+    "status": {
+      "connecting": "connexion…",
+      "reconnecting": "reconnexion…"
+    },
+    "empty": {
+      "title": "Aucune activité en direct pour l'instant",
+      "description": "Les événements apparaîtront ici au fil de la navigation des visiteurs."
+    },
+    "noSite": {
+      "title": "Aucun site sélectionné",
+      "description": "Choisissez un site pour suivre le trafic en direct."
+    },
+    "errors": {
+      "streamFailed": "Flux en direct interrompu"
+    }
+  },
+  "funnels": {
+    "title": "Entonnoirs",
+    "newFunnel": "Nouvel entonnoir",
+    "editFunnel": "Modifier l'entonnoir",
+    "deleteFunnel": "Supprimer l'entonnoir",
+    "openFunnel": "Ouvrir l'entonnoir {name}",
+    "breadcrumb": "Navigation de l'entonnoir",
+    "overallConversion": "Conversion globale",
+    "overallShort": "{pct} au total",
+    "totalEntered": "Total entré",
+    "enteredSessions": "{count} sessions",
+    "medianTime": "Temps médian de conversion",
+    "lastEdited": "Modifié {time}",
+    "stepsCount": "{count} étape | {count} étapes",
+    "step": "Étape {n}",
+    "continued": "{pct}% ont continué",
+    "dropped": "{pct}% ont abandonné",
+    "conversionWindow": "Fenêtre de conversion",
+    "chart": {
+      "title": "Conversion par étape"
+    },
+    "breakdown": {
+      "title": "Répartition",
+      "groupBy": "Regrouper par"
+    },
+    "trend": {
+      "title": "Conversion dans le temps",
+      "series": "Taux de conversion"
+    },
+    "builder": {
+      "title": "Nom de l'entonnoir",
+      "namePlaceholder": "ex. Entonnoir de paiement",
+      "steps": "Étapes",
+      "stepCount": "{current} sur {max} étapes",
+      "addStep": "Ajouter une étape",
+      "eventType": "Type d'événement",
+      "stepLabel": "Libellé de l'étape {n}",
+      "labelPlaceholder": "Libellé de l'étape (facultatif)",
+      "matcher": "Valeur à comparer pour l'étape {n}",
+      "urlPlaceholder": "/chemin ou /chemin/*",
+      "eventPlaceholder": "Nom de l'événement",
+      "conditions": "Conditions",
+      "addCondition": "Ajouter une condition",
+      "moveUp": "Déplacer l'étape vers le haut",
+      "moveDown": "Déplacer l'étape vers le bas",
+      "removeStep": "Supprimer l'étape {n}",
+      "windowDays": "{count} jour | {count} jours",
+      "countBy": "Compter par",
+      "uniqueUsers": "Utilisateurs uniques",
+      "sessions": "Sessions",
+      "save": "Enregistrer l'entonnoir",
+      "triggers": {
+        "pageview": "Page vue",
+        "event": "Événement"
+      },
+      "errors": {
+        "name": {
+          "required": "Un nom d'entonnoir est requis.",
+          "tooLong": "Le nom est trop long."
+        },
+        "steps": {
+          "tooFew": "Un entonnoir nécessite au moins deux étapes."
+        }
+      }
+    },
+    "deleteConfirm": {
+      "title": "Supprimer cet entonnoir ?",
+      "description": "« {name} » sera supprimé définitivement. Cette action est irréversible."
+    },
+    "toast": {
+      "created": "Entonnoir créé",
+      "updated": "Entonnoir mis à jour",
+      "deleted": "Entonnoir supprimé"
+    },
+    "empty": {
+      "title": "Aucun entonnoir",
+      "description": "Créez un entonnoir pour mesurer comment les utilisateurs naviguent dans les flux clés de votre site.",
+      "action": "Créer votre premier entonnoir"
+    }
+  },
+  "heatmaps": {
+    "title": "Cartes de chaleur",
+    "viewTypes": {
+      "clicks": "Clics",
+      "scroll": "Défilement",
+      "movement": "Mouvement",
+      "rageClicks": "Clics de rage"
+    },
+    "stats": {
+      "totalClicks": "Total des clics",
+      "uniqueUsers": "Utilisateurs uniques",
+      "sampleSize": "Taille de l'échantillon"
+    },
+    "topElements": "Éléments principaux",
+    "scrollDepth": "Profondeur de défilement",
+    "intensity": "Intensité",
+    "radius": "Rayon",
+    "openFullscreen": "Ouvrir en plein écran",
+    "exitFullscreen": "Quitter le plein écran",
+    "viewTypeLabel": "Type de vue de la carte de chaleur",
+    "pageLabel": "Page",
+    "deviceLabel": "Appareil",
+    "segmentLabel": "Segment",
+    "allVisitors": "Tous les visiteurs",
+    "devices": {
+      "desktop": "Ordinateur",
+      "tablet": "Tablette",
+      "mobile": "Mobile"
+    },
+    "panel": {
+      "title": "Statistiques"
+    },
+    "empty": {
+      "title": "Aucune interaction enregistrée",
+      "description": "Aucune donnée pour cette page, cet appareil et cette période. Essayez une autre page ou élargissez la plage de dates."
+    },
+    "scroll": {
+      "fold": "Ligne de flottaison médiane — {pct}"
+    },
+    "insights": {
+      "rageTitle": "Clics de rage",
+      "rageBadge": "Frustration",
+      "rageHint": "Éléments cliqués de façon répétée et rapprochée — souvent le signe d'un contrôle qui ne répond pas.",
+      "deadTitle": "Clics morts",
+      "deadBadge": "Sans effet",
+      "deadHint": "Clics n'ayant déclenché aucune navigation, requête réseau ni changement du DOM — l'utilisateur attendait une réaction.",
+      "none": "Aucun signal de frustration sur cette page."
+    },
+    "pages": {
+      "searchPlaceholder": "Rechercher des pages…",
+      "sortBy": "Trier les pages par",
+      "mostClicks": "Plus de clics",
+      "path": "Chemin",
+      "clicksCount": "{count} clics",
+      "noMatch": "Aucune page ne correspond à votre recherche."
+    }
+  },
+  "settings": {
+    "title": "Paramètres",
+    "sections": {
+      "general": "Général",
+      "tracking": "Suivi",
+      "goals": "Objectifs",
+      "team": "Équipe",
+      "sharedDashboards": "Tableaux de bord partagés",
+      "dangerZone": "Zone dangereuse"
+    },
+    "actions": {
+      "saveChanges": "Enregistrer",
+      "add": "Ajouter",
+      "remove": "Retirer"
+    },
+    "noSite": {
+      "title": "Aucun site sélectionné",
+      "description": "Ajoutez un site pour configurer son suivi et son équipe."
+    },
+    "general": {
+      "siteName": "Nom du site",
+      "domain": "Domaine",
+      "domainHint": "Le domaine principal suivi, sans protocole ni chemin.",
+      "timezone": "Fuseau horaire",
+      "trackingSnippet": "Script de suivi",
+      "trackingActive": "Suivi actif",
+      "lastEvent": "Dernier événement il y a {time}",
+      "errors": {
+        "nameRequired": "Saisissez un nom de site.",
+        "domainInvalid": "Saisissez un domaine valide tel que exemple.com."
+      }
+    },
+    "tracker": {
+      "snippetHint": "Collez ceci dans le <head> de chaque page à suivre.",
+      "publicKey": "Clé publique du site",
+      "rotateKey": "Renouveler la clé",
+      "rotateHint": "Générer une nouvelle clé publique. Mettez à jour votre script avant l'expiration de l'ancienne clé.",
+      "rotated": "Clé renouvelée",
+      "gracePeriod": "L'ancienne clé reste valide jusqu'au {date}.",
+      "rotateConfirm": {
+        "title": "Renouveler la clé publique du site ?",
+        "description": "Une nouvelle clé est générée immédiatement. L'ancienne reste valide pendant une courte période pour vous laisser redéployer votre script."
+      }
+    },
+    "tracking": {
+      "cookielessNote": "Statflow fonctionne sans cookies par conception. Aucun cookie n'est déposé et aucun identifiant inter-sites n'est stocké — ce comportement n'est pas modifiable.",
+      "excludedIps": {
+        "label": "Adresses IP exclues",
+        "hint": "Les visites depuis ces IP ou plages CIDR ne sont pas suivies. Jusqu'à {max}.",
+        "placeholder": "203.0.113.4 ou 2001:db8::/32",
+        "empty": "Aucune adresse exclue.",
+        "invalid": "Certaines entrées ne sont pas des adresses IP ou plages CIDR valides."
+      },
+      "allowedDomains": {
+        "label": "Domaines autorisés",
+        "hint": "Seules ces origines peuvent envoyer des événements. Les jokers comme *.exemple.com sont acceptés. Jusqu'à {max}.",
+        "placeholder": "exemple.com ou *.exemple.com",
+        "empty": "Toutes les origines sont autorisées (déconseillé en production).",
+        "invalid": "Certaines entrées ne sont pas des domaines valides."
+      },
+      "retention": {
+        "label": "Conservation des données",
+        "custom": "Personnalisé…",
+        "customLabel": "Conservation personnalisée (jours)",
+        "range": "Entre {min} et {max} jours.",
+        "invalid": "Saisissez une valeur entre 30 et 730 jours."
+      },
+      "stripQuery": {
+        "label": "Retirer les paramètres de requête des URL"
+      },
+      "collect": {
+        "title": "Collecte",
+        "clicks": "Suivre les clics",
+        "scroll": "Suivre la profondeur de défilement",
+        "engagement": "Mesurer le temps d'engagement",
+        "outbound": "Suivre les liens sortants",
+        "hashRouting": "Suivre le routage par ancre (#)"
+      }
+    },
+    "team": {
+      "invite": {
+        "email": "Adresse e-mail",
+        "role": "Rôle",
+        "submit": "Envoyer l'invitation",
+        "emailInvalid": "Saisissez une adresse e-mail valide."
+      },
+      "role": "Rôle",
+      "roles": {
+        "owner": "Propriétaire",
+        "admin": "Administrateur",
+        "editor": "Éditeur",
+        "viewer": "Lecteur"
+      },
+      "status": {
+        "invited": "Invité"
+      },
+      "changeRoleFor": "Modifier le rôle de {name}",
+      "revokeFor": "Révoquer l'accès de {name}",
+      "revokeAccess": "Révoquer l'accès",
+      "joinedOn": "Rejoint le {date}",
+      "empty": {
+        "title": "Aucun membre pour le moment",
+        "description": "Invitez des collègues pour leur donner accès à ce site."
+      },
+      "legend": {
+        "title": "Permissions par rôle",
+        "owner": "Contrôle total, y compris la facturation et la suppression de l'équipe.",
+        "admin": "Gérer les sites, les membres et les clés API ; accès à toutes les données.",
+        "editor": "Créer et modifier sites, objectifs, entonnoirs, segments et rapports.",
+        "viewer": "Accès en lecture seule aux tableaux de bord, analyses et rapports enregistrés."
+      }
+    },
+    "danger": {
+      "resetData": "Réinitialiser toutes les données",
+      "resetDataDesc": "Supprimer définitivement toutes les données analytiques pour ce site. Cette action est irréversible.",
+      "deleteSite": "Supprimer le site",
+      "deleteSiteDesc": "Supprimer définitivement ce site et toutes ses données. Cette action est irréversible.",
+      "confirmName": "Tapez {name} pour confirmer"
+    },
+    "toast": {
+      "saved": "Modifications enregistrées",
+      "keyRotated": "Clé publique renouvelée",
+      "invited": "Invitation envoyée à {email}",
+      "roleUpdated": "Rôle mis à jour",
+      "memberRemoved": "Membre retiré",
+      "siteDeleted": "Site supprimé",
+      "resetUnavailable": "La réinitialisation des données n'est pas encore disponible."
+    }
+  },
+  "auth": {
+    "brand": "Statflow",
+    "themeToggle": {
+      "toLight": "Passer au thème clair",
+      "toDark": "Passer au thème sombre"
+    },
+    "passwordToggle": {
+      "show": "Afficher le mot de passe",
+      "hide": "Masquer le mot de passe"
+    },
+    "login": {
+      "title": "Connectez-vous à votre compte",
+      "email": "E-mail",
+      "emailPlaceholder": "vous@exemple.com",
+      "password": "Mot de passe",
+      "submit": "Se connecter",
+      "submitting": "Connexion…",
+      "forgot": "Oublié ?",
+      "noAccount": "Pas de compte ?",
+      "createOne": "Créer un compte",
+      "welcomeBack": "Content de vous revoir",
+      "welcomeBackDetail": "Vous êtes maintenant connecté."
+    },
+    "register": {
+      "title": "Créer votre compte",
+      "name": "Nom complet",
+      "namePlaceholder": "Ada Lovelace",
+      "email": "E-mail",
+      "emailPlaceholder": "vous@exemple.com",
+      "password": "Mot de passe",
+      "passwordHint": "Au moins 12 caractères.",
+      "confirmPassword": "Confirmer le mot de passe",
+      "terms": "J'accepte les {terms} et la {privacy}",
+      "termsAria": "J'accepte les conditions d'utilisation et la politique de confidentialité",
+      "termsLink": "Conditions d'utilisation",
+      "privacyLink": "Politique de confidentialité",
+      "submit": "Créer un compte",
+      "submitting": "Création du compte…",
+      "hasAccount": "Déjà un compte ?",
+      "signIn": "Se connecter",
+      "successTitle": "Compte créé",
+      "successDetail": "Vérifiez votre boîte de réception pour confirmer votre e-mail."
+    },
+    "forgotPassword": {
+      "title": "Réinitialiser votre mot de passe",
+      "description": "Entrez votre e-mail et nous vous enverrons un lien de réinitialisation.",
+      "email": "E-mail",
+      "emailPlaceholder": "vous@exemple.com",
+      "submit": "Envoyer le lien",
+      "submitting": "Envoi…",
+      "backToLogin": "Retour à la connexion",
+      "successTitle": "Vérifiez votre boîte de réception",
+      "successDescription": "Si un compte existe pour {email}, nous avons envoyé un lien de réinitialisation. Le lien expire dans 1 heure.",
+      "resend": "Utiliser une autre adresse"
+    },
+    "resetPassword": {
+      "title": "Choisissez un nouveau mot de passe",
+      "description": "Entrez un nouveau mot de passe pour votre compte.",
+      "password": "Nouveau mot de passe",
+      "passwordHint": "Au moins 12 caractères.",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "submit": "Réinitialiser le mot de passe",
+      "submitting": "Réinitialisation…",
+      "backToLogin": "Retour à la connexion",
+      "successTitle": "Mot de passe mis à jour",
+      "successDescription": "Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
+      "missingToken": "Ce lien de réinitialisation est invalide ou incomplet. Demandez-en un nouveau depuis la page de mot de passe oublié.",
+      "requestNewLink": "Demander un nouveau lien"
+    },
+    "validation": {
+      "emailRequired": "L'e-mail est obligatoire.",
+      "emailInvalid": "Saisissez une adresse e-mail valide.",
+      "nameRequired": "Le nom est obligatoire.",
+      "passwordRequired": "Le mot de passe est obligatoire.",
+      "passwordTooShort": "Le mot de passe doit comporter au moins 12 caractères.",
+      "confirmRequired": "Veuillez confirmer votre mot de passe.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas.",
+      "termsRequired": "Vous devez accepter les conditions pour continuer."
+    },
+    "errors": {
+      "invalidCredentials": "E-mail ou mot de passe incorrect.",
+      "emailTaken": "Un compte existe déjà avec cette adresse e-mail.",
+      "validationFailed": "Veuillez vérifier les champs en surbrillance.",
+      "rateLimited": "Trop de tentatives. Veuillez réessayer plus tard.",
+      "invalidResetToken": "Ce lien de réinitialisation est invalide, expiré ou déjà utilisé.",
+      "network": "Serveur injoignable. Vérifiez votre connexion et réessayez.",
+      "generic": "Une erreur est survenue. Veuillez réessayer."
+    }
+  },
+  "commandPalette": {
+    "placeholder": "Rechercher pages, paramètres, actions…",
+    "sections": {
+      "recent": "Récent",
+      "navigate": "Naviguer",
+      "actions": "Actions"
+    },
+    "noResults": "Aucun résultat pour « {query} »",
+    "noResultsHint": "Vérifiez l'orthographe ou essayez un autre terme."
+  },
+  "charts": {
+    "viewAsTable": "Voir le tableau",
+    "other": "Autres"
+  },
+  "segments": {
+    "title": "Segments",
+    "newSegment": "Nouveau segment",
+    "addCondition": "Ajouter une condition",
+    "saveSegment": "Enregistrer le segment"
+  },
+  "dimensions": {
+    "pathname": "Page",
+    "referrer_domain": "Référent",
+    "utm_source": "Source UTM",
+    "utm_medium": "Support UTM",
+    "utm_campaign": "Campagne UTM",
+    "country": "Pays",
+    "region": "Région",
+    "city": "Ville",
+    "device_type": "Appareil",
+    "browser": "Navigateur",
+    "os": "Système d'exploitation",
+    "language": "Langue",
+    "entry_page": "Page d'entrée",
+    "exit_page": "Page de sortie",
+    "event_name": "Événement"
+  },
+  "operators": {
+    "eq": "est",
+    "neq": "n'est pas",
+    "in": "est l'un de",
+    "not_in": "n'est pas l'un de",
+    "contains": "contient",
+    "not_contains": "ne contient pas",
+    "starts_with": "commence par",
+    "gt": "supérieur à",
+    "gte": "au moins",
+    "lt": "inférieur à",
+    "lte": "au plus"
+  },
+  "errors": {
+    "generic": "Une erreur est survenue. Veuillez réessayer.",
+    "notFound": "Page introuvable",
+    "unauthorized": "Votre session a expiré. Veuillez vous reconnecter.",
+    "loadFailed": "Impossible de charger les données",
+    "saveFailed": "Impossible d'enregistrer les modifications"
+  },
+  "dateRange": {
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "last7Days": "7 derniers jours",
+    "last30Days": "30 derniers jours",
+    "last90Days": "90 derniers jours",
+    "thisMonth": "Ce mois-ci",
+    "lastMonth": "Mois dernier",
+    "custom": "Plage personnalisée",
+    "compare": "Comparer à",
+    "previousPeriod": "Période précédente",
+    "previousYear": "Année précédente",
+    "none": "Pas de comparaison"
+  }
+}

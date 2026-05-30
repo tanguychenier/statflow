@@ -1,0 +1,59 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "France", "iso_a2": "FR" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-4.79, 48.39],
+            [2.51, 51.15],
+            [7.59, 47.59],
+            [7.59, 43.5],
+            [3.1, 42.42],
+            [-1.9, 43.42],
+            [-4.79, 48.39]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "United States of America", "iso_a2": "US" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-125.0, 48.0],
+            [-66.9, 47.5],
+            [-80.5, 25.1],
+            [-97.0, 25.8],
+            [-117.1, 32.5],
+            [-124.2, 42.0],
+            [-125.0, 48.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Germany", "iso_a2": "DE" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [5.99, 51.0],
+            [9.0, 54.98],
+            [13.0, 54.0],
+            [14.6, 51.0],
+            [12.5, 47.5],
+            [7.6, 47.6],
+            [5.99, 51.0]
+          ]
+        ]
+      }
+    }
+  ]
+}
