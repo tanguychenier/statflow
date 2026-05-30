@@ -203,7 +203,7 @@ jobs:
       # ---- pnpm setup & cache ---------------------------------------------
       - name: Setup pnpm
         if: steps.frontend-exists.outputs.present == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 9
 
@@ -266,7 +266,7 @@ jobs:
       # ---- pnpm setup & cache (shared with frontend job if co-located) ----
       - name: Setup pnpm
         if: steps.tracker-exists.outputs.present == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 9
 
