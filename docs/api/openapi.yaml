@@ -1,0 +1,4243 @@
+openapi: "3.1.0"
+
+info:
+  title: Statflow API
+  version: "1.0.0"
+  description: |
+    REST API for Statflow — a privacy-first, cookieless web and product analytics platform.
+
+    ## Authentication
+
+    Three authentication surfaces are supported:
+
+    - **Session JWT** (`BearerAuth`): issued by `POST /api/v1/auth/login`, transmitted as `Authorization: Bearer {token}`. Used by the dashboard SPA.
+    - **API Key** (`ApiKeyAuth`): prefixed `sfk_live_` or `sfk_test_`. Used by programmatic integrations.
+    - **Tracker Key** (`TrackerKeyAuth`): prefixed `stk_`. Carried in the event payload `site_key` field (request body, not a header — `sendBeacon` compatibility). Identifies the site for event ingestion. Public by design; validated together with a per-site domain allowlist and rate limiting. See ADR-0009.
+
+    ## Error Model
+
+    All 4xx and 5xx responses use `application/problem+json` (RFC 9457). See the error catalog for all typed error URIs.
+
+    ## Versioning
+
+    All endpoints are prefixed `/api/v1`. Additive changes are non-breaking. Breaking changes result in a new major version with a minimum 12-month deprecation window.
+  contact:
+    name: Statflow Backend Team
+    url: https://statflow.io
+  license:
+    name: AGPL-3.0-only
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+
+servers:
+  - url: https://{host}/api/v1
+    description: Statflow API v1
+    variables:
+      host:
+        default: app.statflow.io
+        description: Your Statflow instance hostname
+
+tags:
+  - name: Ingestion
+    description: Event ingestion endpoint consumed by the JS tracker and server-side integrations.
+  - name: Auth
+    description: Session management — login, logout, token refresh, JWKS.
+  - name: Users
+    description: User account management.
+  - name: Teams
+    description: Team management — creation, membership, roles.
+  - name: API Keys
+    description: Programmatic API key management.
+  - name: Sites
+    description: Site registration and configuration.
+  - name: Analytics
+    description: Analytics query endpoints — aggregates, time series, top lists, realtime, funnels, cohorts, heatmaps.
+  - name: Reporting
+    description: Saved reports, scheduled email reports, alerts, and data exports.
+
+# ---------------------------------------------------------------------------
+# PATHS
+# ---------------------------------------------------------------------------
+
+paths:
+
+  # =========================================================================
+  # INGESTION
+  # =========================================================================
+
+  /events:
+    post:
+      operationId: ingestEvent
+      summary: Ingest a single event
+      description: |
+        Accepts a single analytics event from the JS tracker or a server-side integration.
+        Returns `204 No Content` on success; the response body is always empty.
+
+        **Authentication**: `TrackerKeyAuth` — the public `site_key` (`stk_...`) carried
+        in the payload body. No `Authorization` header. The key is validated together
+        with the site's domain allowlist and per-site rate limiting (ADR-0009).
+
+        **Payload**: the canonical event model defined in
+        `docs/data-model/event-contract.md`. The browser tracker sends a compact wire
+        form; the ingestion layer normalises wire → canonical on receipt. This schema
+        documents the canonical form, which server-side integrations may send directly.
+
+        **Idempotency**: include a unique `event_id` (UUID v4). Replaying the same
+        `event_id` within 24 hours silently returns `204` without re-inserting the event.
+
+        **CORS**: this endpoint accepts requests from any origin (`Access-Control-Allow-Origin: *`).
+      tags:
+        - Ingestion
+      security:
+        - TrackerKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventPayload"
+            examples:
+              pageview:
+                summary: Page view event (canonical form)
+                value:
+                  event_id: "8f14e45f-ce64-4f1a-9b2d-2c3a4b5c6d7e"
+                  site_key: "stk_abcdef1234567890"
+                  event_name: "pageview"
+                  timestamp: "2025-06-15T14:30:00.123Z"
+                  seq: 0
+                  tracker_version: "1.0.0"
+                  url: "https://example.com/blog/post-1"
+                  pathname: "/blog/post-1"
+                  hostname: "example.com"
+                  title: "Post 1 — Example Blog"
+                  referrer: "https://www.google.com/"
+                  screen_width: 2560
+                  screen_height: 1600
+                  viewport_width: 1440
+                  viewport_height: 900
+                  language: "fr-FR"
+                  timezone: "Europe/Paris"
+              click:
+                summary: Click event with behavioral signals
+                value:
+                  event_id: "1d2e3f40-5a6b-4c7d-8e9f-0a1b2c3d4e5f"
+                  site_key: "stk_abcdef1234567890"
+                  event_name: "click"
+                  timestamp: "2025-06-15T14:30:05.456Z"
+                  seq: 7
+                  tracker_version: "1.0.0"
+                  url: "https://example.com/pricing"
+                  pathname: "/pricing"
+                  hostname: "example.com"
+                  viewport_width: 1440
+                  viewport_height: 900
+                  behavioral:
+                    click_x: 742
+                    click_y: 318
+                    click_x_pct: 51.5
+                    click_y_pct: 35.3
+                    element_tag: "button"
+                    element_text: "Start free trial"
+                    element_selector: "main > section.pricing .cta-button"
+                    scroll_depth_pct: 42
+                    engagement_time_ms: 8340
+          text/plain:
+            schema:
+              $ref: "#/components/schemas/EventPayload"
+      responses:
+        "204":
+          description: |
+            Event accepted for ingestion. The response body is empty. Replayed
+            `event_id` values within the 24-hour idempotency window also return `204`.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /events/batch:
+    post:
+      operationId: ingestEventBatch
+      summary: Ingest a batch of events
+      description: |
+        Accepts the unified batch envelope (root key `events`) with up to 100 events.
+        Each event is validated independently. Returns `204` if every event was
+        accepted, `200` with a per-item `results` body if some events were rejected,
+        or `400`/`422` if the whole envelope is malformed.
+
+        Batch limit: 100 events or 256 KB, whichever is reached first.
+
+        Authentication and payload semantics are identical to `POST /events`.
+      tags:
+        - Ingestion
+      security:
+        - TrackerKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventBatch"
+          text/plain:
+            schema:
+              $ref: "#/components/schemas/EventBatch"
+      responses:
+        "204":
+          description: All events in the batch were accepted for ingestion.
+        "200":
+          description: |
+            The batch was processed; some events were accepted and some were rejected.
+            This is a normal success response (not a Problem Details object): the body
+            lists per-item status so the caller can retry only the failed events.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchResultResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  # =========================================================================
+  # AUTH
+  # =========================================================================
+
+  /auth/login:
+    post:
+      operationId: login
+      summary: Authenticate with email and password
+      description: |
+        Validates credentials and returns a short-lived JWT access token in the response body.
+        Sets an `HttpOnly`, `SameSite=Strict`, `Secure` refresh token cookie.
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                password:
+                  type: string
+                  minLength: 12
+                  maxLength: 128
+                  writeOnly: true
+      responses:
+        "200":
+          description: Login successful.
+          headers:
+            Set-Cookie:
+              description: "Refresh token in an HttpOnly cookie named `sf_rt`."
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /auth/register:
+    post:
+      operationId: register
+      summary: Create a new user account
+      description: |
+        Registers a new user with email and password. On success, a verification email
+        is dispatched and the account is created in an unverified state. The user may
+        log in immediately; email verification is required to invite team members or
+        manage billing.
+
+        Password policy: minimum **12 characters** (ADR-0009 §2).
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - name
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                password:
+                  type: string
+                  minLength: 12
+                  maxLength: 128
+                  writeOnly: true
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  description: Display name shown in team member lists.
+      responses:
+        "201":
+          description: |
+            Account created. Returns the new user profile. A verification email has
+            been dispatched; the `email_verified` field will be `false` until confirmed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      summary: Request a password reset link
+      description: |
+        Sends a one-time password reset link to the supplied email address if an account
+        with that address exists. The response is always `202 Accepted` regardless of
+        whether the address is registered — this prevents user enumeration. The link
+        expires after **1 hour** and is single-use.
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+      responses:
+        "202":
+          description: |
+            Request accepted. If the address matches a registered account, a reset link
+            will be sent. No indication is given as to whether the address exists.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      summary: Complete a password reset using a one-time token
+      description: |
+        Validates the reset token (from the link emailed by `POST /auth/forgot-password`)
+        and sets a new password. The token is consumed on first use and becomes invalid.
+        All existing sessions for the account are revoked on success.
+
+        Password policy: minimum **12 characters** (ADR-0009 §2).
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - new_password
+              properties:
+                token:
+                  type: string
+                  description: |
+                    The opaque reset token extracted from the link sent by
+                    `POST /auth/forgot-password`. Tokens are single-use and expire
+                    after 1 hour.
+                  minLength: 32
+                  maxLength: 256
+                  writeOnly: true
+                new_password:
+                  type: string
+                  minLength: 12
+                  maxLength: 128
+                  writeOnly: true
+      responses:
+        "204":
+          description: |
+            Password reset successfully. All existing sessions have been revoked.
+            The user must log in again via `POST /auth/login`.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: |
+            The reset token is invalid, expired, or has already been used.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              example:
+                type: "https://statflow.io/errors/token-revoked"
+                title: "Token Revoked"
+                status: 401
+                detail: "The password reset token is invalid, expired, or has already been used."
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Invalidate the current session
+      description: |
+        Revokes the refresh token server-side and clears the cookie. The access token
+        remains technically valid until its 15-minute TTL expires; the client must discard it.
+      tags:
+        - Auth
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Session successfully invalidated.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/refresh:
+    post:
+      operationId: refreshToken
+      summary: Obtain a new access token using the refresh token cookie
+      description: |
+        The refresh token is read from the `sf_rt` cookie (set during login). On success,
+        the refresh token is rotated (old one revoked) and a new one is set in the cookie.
+      tags:
+        - Auth
+      security: []
+      responses:
+        "200":
+          description: New access token issued.
+          headers:
+            Set-Cookie:
+              description: "Rotated refresh token in `sf_rt` HttpOnly cookie."
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/.well-known/jwks.json:
+    get:
+      operationId: getJwks
+      summary: Retrieve the public key set for JWT verification
+      description: Returns the ES256 public keys used to sign access tokens.
+      tags:
+        - Auth
+      security: []
+      responses:
+        "200":
+          description: JWKS document.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+
+  # =========================================================================
+  # USERS
+  # =========================================================================
+
+  /users/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get the authenticated user's profile
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: User profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    patch:
+      operationId: updateCurrentUser
+      summary: Update the authenticated user's profile
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdateRequest"
+      responses:
+        "200":
+          description: Updated user profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /users/me/password:
+    put:
+      operationId: changePassword
+      summary: Change the current user's password
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - current_password
+                - new_password
+              properties:
+                current_password:
+                  type: string
+                  writeOnly: true
+                new_password:
+                  type: string
+                  minLength: 12
+                  maxLength: 128
+                  writeOnly: true
+      responses:
+        "204":
+          description: Password changed successfully. All existing sessions are revoked.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  # =========================================================================
+  # TEAMS
+  # =========================================================================
+
+  /teams:
+    get:
+      operationId: listTeams
+      summary: List teams the current user belongs to
+      tags:
+        - Teams
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of teams.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Team"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      operationId: createTeam
+      summary: Create a new team
+      tags:
+        - Teams
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamCreateRequest"
+      responses:
+        "201":
+          description: Team created. The creator is automatically assigned the Owner role.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /teams/{team_id}:
+    parameters:
+      - $ref: "#/components/parameters/TeamIdParam"
+
+    get:
+      operationId: getTeam
+      summary: Get a team by ID
+      tags:
+        - Teams
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Team details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      operationId: updateTeam
+      summary: Update a team (Owner/Admin only)
+      tags:
+        - Teams
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamUpdateRequest"
+      responses:
+        "200":
+          description: Updated team.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+    delete:
+      operationId: deleteTeam
+      summary: Delete a team and all its data (Owner only)
+      tags:
+        - Teams
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Team deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /teams/{team_id}/members:
+    parameters:
+      - $ref: "#/components/parameters/TeamIdParam"
+
+    get:
+      operationId: listTeamMembers
+      summary: List team members
+      tags:
+        - Teams
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of team members.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/TeamMember"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    post:
+      operationId: inviteTeamMember
+      summary: Invite a user to the team (Owner/Admin only)
+      tags:
+        - Teams
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  $ref: "#/components/schemas/TeamRole"
+      responses:
+        "201":
+          description: Invitation sent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamMember"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /teams/{team_id}/members/{user_id}:
+    parameters:
+      - $ref: "#/components/parameters/TeamIdParam"
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    patch:
+      operationId: updateTeamMemberRole
+      summary: Change a member's role (Owner/Admin only)
+      tags:
+        - Teams
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  $ref: "#/components/schemas/TeamRole"
+      responses:
+        "200":
+          description: Updated membership.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamMember"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+    delete:
+      operationId: removeTeamMember
+      summary: Remove a member from the team (Owner/Admin only)
+      tags:
+        - Teams
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Member removed.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # =========================================================================
+  # API KEYS
+  # =========================================================================
+
+  /api-keys:
+    get:
+      operationId: listApiKeys
+      summary: List API keys for the authenticated user
+      tags:
+        - API Keys
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of API keys. Raw key values are never returned after creation.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/ApiKey"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      operationId: createApiKey
+      summary: Create a new API key
+      description: |
+        Returns the raw key value **once** in the `raw_key` field. Store it securely;
+        it cannot be retrieved again. Subsequent reads return only the masked form.
+      tags:
+        - API Keys
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyCreateRequest"
+      responses:
+        "201":
+          description: "API key created. Contains `raw_key` — store this value now."
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiKey"
+                  - type: object
+                    properties:
+                      raw_key:
+                        type: string
+                        description: "Full API key value, shown once. Example: sfk_live_..."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /api-keys/{key_id}:
+    parameters:
+      - name: key_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    delete:
+      operationId: revokeApiKey
+      summary: Revoke an API key
+      tags:
+        - API Keys
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: API key revoked.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # =========================================================================
+  # SITES
+  # =========================================================================
+
+  /sites:
+    get:
+      operationId: listSites
+      summary: List sites accessible to the authenticated identity
+      tags:
+        - Sites
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - name: team_id
+          in: query
+          description: Filter sites by team.
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Full-text search on site name and domain.
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        "200":
+          description: Paginated list of sites.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Site"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      operationId: createSite
+      summary: Register a new site
+      tags:
+        - Sites
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteCreateRequest"
+      responses:
+        "201":
+          description: "Site created. Response includes the tracker key (`tracker_key`)."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Site"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /sites/{site_id}:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+
+    get:
+      operationId: getSite
+      summary: Get a site by ID
+      tags:
+        - Sites
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Site details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Site"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      operationId: updateSite
+      summary: Update site metadata (Admin/Owner only)
+      tags:
+        - Sites
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteUpdateRequest"
+      responses:
+        "200":
+          description: Updated site.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Site"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+    delete:
+      operationId: deleteSite
+      summary: Delete a site and all its analytical data (Owner only)
+      description: |
+        This is a destructive, irreversible operation. All ClickHouse event data for this site
+        is scheduled for deletion. The operation is asynchronous; data removal may take up to
+        24 hours to propagate through the pipeline.
+      tags:
+        - Sites
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Site deletion scheduled.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sites/{site_id}/settings:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+
+    get:
+      operationId: getSiteSettings
+      summary: Get site configuration settings
+      tags:
+        - Sites
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Site settings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateSiteSettings
+      summary: Replace site configuration settings (Admin/Owner only)
+      tags:
+        - Sites
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteSettings"
+      responses:
+        "200":
+          description: Updated site settings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /sites/{site_id}/tracker-key/rotate:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+
+    post:
+      operationId: rotateTrackerKey
+      summary: Rotate the tracker key for a site (Admin/Owner only)
+      description: |
+        Issues a new tracker key and revokes the old one. The old key remains valid for
+        a 1-hour grace period to allow deployed tracker scripts to transition.
+      tags:
+        - Sites
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: New tracker key issued.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tracker_key:
+                    type: string
+                    description: New tracker key (stk_...).
+                  old_key_valid_until:
+                    type: string
+                    format: date-time
+                    description: UTC timestamp when the old key is fully revoked.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # =========================================================================
+  # GOALS
+  # =========================================================================
+
+  /sites/{site_id}/goals:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+    get:
+      operationId: listGoals
+      summary: List conversion goals for a site
+      description: |
+        Goals are persisted resources (`postgres.goals`). A goal matches either a
+        pageview URL pattern or a custom event name; matching events produce a
+        derived `conversion` event for rollups (see `event-contract.md §8`).
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: List of goals.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Goal"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createGoal
+      summary: Create a conversion goal
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalCreateRequest"
+      responses:
+        "201":
+          description: Goal created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /sites/{site_id}/goals/{goal_id}:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+      - name: goal_id
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      operationId: updateGoal
+      summary: Update a conversion goal
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalCreateRequest"
+      responses:
+        "200":
+          description: Goal updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      operationId: deleteGoal
+      summary: Delete a conversion goal
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "204":
+          description: Goal deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # =========================================================================
+  # PUBLIC SHARED DASHBOARD
+  # =========================================================================
+
+  /public/{share_token}/overview:
+    parameters:
+      - name: share_token
+        in: path
+        required: true
+        description: The opaque share token from `sites.shared_link_token`.
+        schema:
+          type: string
+    get:
+      operationId: getPublicOverview
+      summary: Public, unauthenticated read of a site's shared dashboard
+      description: |
+        Backs the public shared dashboard (Screen 8). Available only when the
+        site has `public_stats` enabled. This is the single endpoint with no
+        authenticated principal; access is gated by possession of the
+        unguessable `share_token` plus, if set, the share password.
+
+        If the share link is password-protected, the caller must supply the
+        password via the `X-Share-Password` header; an incorrect or missing
+        password yields `401`.
+      tags:
+        - Analytics
+      security: []
+      parameters:
+        - name: X-Share-Password
+          in: header
+          required: false
+          description: Password for a password-protected share link.
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Public overview metrics for the shared site.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AggregateMetricsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # =========================================================================
+  # ANALYTICS
+  # =========================================================================
+
+  /analytics/{site_id}/aggregate:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+    post:
+      operationId: getAggregateMetrics
+      summary: Get aggregate metrics for a date range
+      description: |
+        Returns summary metrics (visitors, pageviews, sessions, bounce rate, avg session
+        duration) for the specified period. Supports comparison periods.
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyticsQueryBase"
+            example:
+              date_from: "2025-06-01"
+              date_to: "2025-06-30"
+              metrics:
+                - visitors
+                - pageviews
+                - sessions
+                - bounce_rate
+                - avg_duration
+              compare_period: "previous_period"
+      responses:
+        "200":
+          description: Aggregate metrics.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AggregateMetricsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
+  /analytics/{site_id}/timeseries:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+    post:
+      operationId: getTimeSeries
+      summary: Get metric time series
+      description: |
+        Returns one or more metrics bucketed by time interval (minute, hour, day, week, month).
+        The interval is automatically selected based on the date range if not specified.
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AnalyticsQueryBase"
+                - type: object
+                  properties:
+                    interval:
+                      type: string
+                      enum: [minute, hour, day, week, month]
+                      description: Time bucket size. Auto-selected if omitted.
+                    metrics:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/MetricName"
+      responses:
+        "200":
+          description: Time series data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeSeriesResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
+  /analytics/{site_id}/breakdown:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+    post:
+      operationId: getBreakdown
+      summary: Get metrics broken down by a property (top pages, sources, devices, countries, etc.)
+      description: |
+        Returns metric values broken down by a single dimension property, ordered by the
+        primary metric descending (configurable). This single endpoint replaces separate
+        "top pages", "top sources", "top devices", "top countries" endpoints.
+
+        `property` can be any filterable dimension: `pathname`, `referrer_domain`,
+        `utm_source`, `utm_medium`, `utm_campaign`, `country`, `region`, `city`,
+        `device_type`, `browser`, `os`, `language`, `entry_page`, `exit_page`, `event_name`.
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AnalyticsQueryBase"
+                - type: object
+                  required:
+                    - property
+                  properties:
+                    property:
+                      type: string
+                      description: Dimension to break down by.
+                      example: pathname
+                    metrics:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/MetricName"
+                    limit:
+                      type: integer
+                      minimum: 1
+                      maximum: 1000
+                      default: 100
+                    sort_by:
+                      $ref: "#/components/schemas/MetricName"
+                    sort_order:
+                      type: string
+                      enum: [asc, desc]
+                      default: desc
+      responses:
+        "200":
+          description: Breakdown result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BreakdownResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
+  /analytics/{site_id}/realtime:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+    get:
+      operationId: getRealtimeStats
+      summary: Get current realtime visitor stats (last 5 minutes)
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Realtime stats.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealtimeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /analytics/{site_id}/realtime/stream:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+    get:
+      operationId: streamRealtime
+      summary: Server-Sent Events stream of realtime stats and live events
+      description: |
+        A long-lived **Server-Sent Events** (`text/event-stream`) connection backing
+        the Realtime screen. The window is the **last 5 minutes** (ADR / canonical
+        decision: realtime window = 5 minutes), consistent with `GET .../realtime`.
+
+        Two named event types are emitted on the stream:
+
+        - `stats` — a `RealtimeResponse` object, pushed every ~2 seconds.
+        - `event` — a `RealtimeEvent` object, one per newly ingested event, for the
+          live event-stream panel (newest first, client keeps at most 200 rows).
+
+        Authentication is by `BearerAuth` (the SPA passes the access token as a query
+        parameter `access_token` because `EventSource` cannot set headers) or by
+        `ApiKeyAuth`. The connection is closed by the server on token expiry; the
+        client reconnects with a fresh token.
+      tags:
+        - Analytics
+      parameters:
+        - name: access_token
+          in: query
+          required: false
+          description: JWT access token, for `EventSource` clients that cannot set an `Authorization` header.
+          schema:
+            type: string
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: An open SSE stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  SSE framing. Each message is `event: stats|event` followed by a
+                  `data:` line containing a JSON `RealtimeResponse` or `RealtimeEvent`.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sites/{site_id}/funnels:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+    get:
+      operationId: listFunnels
+      summary: List saved funnels for a site
+      description: |
+        Funnels are first-class persisted resources (`postgres.funnels` / `funnel_steps`).
+        A saved funnel has a stable `id` used by the ClickHouse `funnel_events` table
+        and by `POST /analytics/{site_id}/funnels`.
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: List of saved funnels.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Funnel"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createFunnel
+      summary: Create a saved funnel
+      description: |
+        Creating a funnel makes its steps available to the ingestion-time
+        `funnel_events` fan-out. A nightly backfill job populates `funnel_events`
+        with matching historical events for the new funnel.
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FunnelCreateRequest"
+      responses:
+        "201":
+          description: Funnel created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Funnel"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /sites/{site_id}/funnels/{funnel_id}:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+      - name: funnel_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getFunnel
+      summary: Get a saved funnel
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: The saved funnel.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Funnel"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateFunnel
+      summary: Update a saved funnel
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FunnelCreateRequest"
+      responses:
+        "200":
+          description: Funnel updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Funnel"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      operationId: deleteFunnel
+      summary: Delete a saved funnel
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "204":
+          description: Funnel deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /analytics/{site_id}/funnels:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+    post:
+      operationId: queryFunnel
+      summary: Run a funnel analysis
+      description: |
+        Calculates conversion rates through an ordered sequence of steps (2–16).
+        The request must reference a **saved funnel** by `funnel_id` (created via
+        `POST /sites/{site_id}/funnels`). The funnel's steps are pre-materialised into
+        the ClickHouse `funnel_events` table, so the query is fast and exact. Steps are
+        ordered: each must occur in sequence within a session or within a configurable
+        conversion window.
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FunnelQueryRequest"
+            example:
+              date_from: "2025-06-01"
+              date_to: "2025-06-30"
+              funnel_id: "01HXK2Q4B7T8NMPZW6RDYGJ5ZZ"
+              conversion_window_days: 7
+      responses:
+        "200":
+          description: Funnel analysis result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FunnelResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
+  /analytics/{site_id}/retention:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+    post:
+      operationId: queryRetention
+      summary: Run a retention / cohort analysis
+      description: |
+        Calculates user retention cohorts. Users are grouped by their first-event date
+        (weekly or monthly cohorts) and retention is measured by return visits/events
+        in subsequent periods.
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RetentionQueryRequest"
+      responses:
+        "200":
+          description: Retention cohort table.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetentionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
+  /analytics/{site_id}/heatmap:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+    post:
+      operationId: queryHeatmap
+      summary: Get click/scroll heatmap data for a page
+      description: |
+        Returns click point coordinates and scroll depth aggregates for a specific
+        pathname and viewport width range. Used to render heatmap overlays in the dashboard.
+
+        Click points are returned as aggregated buckets (not raw coordinates) to protect
+        privacy and reduce payload size. Each bucket represents a 10x10 px grid cell
+        normalised to the page's rendered dimensions.
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeatmapQueryRequest"
+            example:
+              date_from: "2025-06-01"
+              date_to: "2025-06-30"
+              pathname: "/pricing"
+              viewport_width_min: 1024
+              viewport_width_max: 1920
+      responses:
+        "200":
+          description: Heatmap data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeatmapResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
+  /analytics/{site_id}/segments:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+
+    get:
+      operationId: listSegments
+      summary: List saved segments for a site
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: List of saved segments.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Segment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      operationId: createSegment
+      summary: Create a saved segment
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SegmentCreateRequest"
+      responses:
+        "201":
+          description: Segment created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Segment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /analytics/{site_id}/segments/{segment_id}:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+      - name: segment_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    delete:
+      operationId: deleteSegment
+      summary: Delete a saved segment
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Segment deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # =========================================================================
+  # REPORTING
+  # =========================================================================
+
+  /sites/{site_id}/reports:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+
+    get:
+      operationId: listSavedReports
+      summary: List saved reports for a site
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of saved reports.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/SavedReport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      operationId: createSavedReport
+      summary: Save a report configuration
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedReportCreateRequest"
+      responses:
+        "201":
+          description: Saved report created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedReport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /sites/{site_id}/reports/{report_id}:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+      - name: report_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      operationId: getSavedReport
+      summary: Get a saved report
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Saved report.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedReport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteSavedReport
+      summary: Delete a saved report
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Report deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sites/{site_id}/scheduled-reports:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+
+    get:
+      operationId: listScheduledReports
+      summary: List scheduled email reports
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of scheduled reports.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/ScheduledReport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      operationId: createScheduledReport
+      summary: Create a scheduled email report
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduledReportCreateRequest"
+      responses:
+        "201":
+          description: Scheduled report created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledReport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /sites/{site_id}/scheduled-reports/{scheduled_report_id}:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+      - name: scheduled_report_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    patch:
+      operationId: updateScheduledReport
+      summary: Update a scheduled report
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduledReportUpdateRequest"
+      responses:
+        "200":
+          description: Updated scheduled report.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledReport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+    delete:
+      operationId: deleteScheduledReport
+      summary: Delete a scheduled report
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Scheduled report deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sites/{site_id}/alerts:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+
+    get:
+      operationId: listAlerts
+      summary: List metric alerts for a site
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of alerts.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Alert"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      operationId: createAlert
+      summary: Create a metric alert
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertCreateRequest"
+      responses:
+        "201":
+          description: Alert created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /sites/{site_id}/alerts/{alert_id}:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+      - name: alert_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    patch:
+      operationId: updateAlert
+      summary: Update an alert
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertUpdateRequest"
+      responses:
+        "200":
+          description: Updated alert.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteAlert
+      summary: Delete an alert
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Alert deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sites/{site_id}/exports:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+
+    post:
+      operationId: createDataExport
+      summary: Request an asynchronous data export
+      description: |
+        Enqueues a data export job. The job processes asynchronously and the caller polls
+        `GET /sites/{site_id}/exports/{export_id}` or receives a webhook notification.
+        Export formats: `csv`, `ndjson`.
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportCreateRequest"
+      responses:
+        "202":
+          description: Export job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Export"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /sites/{site_id}/exports/{export_id}:
+    parameters:
+      - $ref: "#/components/parameters/SiteIdParam"
+      - name: export_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      operationId: getExportStatus
+      summary: Get export job status and download URL
+      tags:
+        - Reporting
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: "Export job status. When `status` is `completed`, `download_url` is present."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Export"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+# ---------------------------------------------------------------------------
+# COMPONENTS
+# ---------------------------------------------------------------------------
+
+components:
+
+  # =========================================================================
+  # SECURITY SCHEMES
+  # =========================================================================
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Short-lived JWT access token (ES256, 15-minute TTL). Obtain via `POST /auth/login` or
+        `POST /auth/refresh`. Transmitted as `Authorization: Bearer {token}`.
+
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Programmatic API key. Prefixed `sfk_live_` (production) or `sfk_test_` (sandbox).
+        Transmitted as `Authorization: Bearer sfk_live_...`.
+
+    TrackerKeyAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Tracker key embedded in event payload `site_key` field. Prefixed `stk_`. Public by design.
+
+  # =========================================================================
+  # PARAMETERS
+  # =========================================================================
+
+  parameters:
+    SiteIdParam:
+      name: site_id
+      in: path
+      required: true
+      description: UUID of the site.
+      schema:
+        type: string
+        format: uuid
+        example: "3f1a9b2d-2c3a-4b5c-8e9f-0a1b2c3d4e5f"
+
+    TeamIdParam:
+      name: team_id
+      in: path
+      required: true
+      description: UUID of the team.
+      schema:
+        type: string
+        format: uuid
+        example: "7c2e4a16-5b3d-4e8f-9a0b-1c2d3e4f5061"
+
+    CursorParam:
+      name: cursor
+      in: query
+      required: false
+      description: Opaque pagination cursor from a previous response.
+      schema:
+        type: string
+
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      description: Number of items per page (1–100).
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  # =========================================================================
+  # SCHEMAS
+  # =========================================================================
+
+  schemas:
+
+    # -----------------------------------------------------------------------
+    # INGESTION
+    # -----------------------------------------------------------------------
+
+    EventPayload:
+      type: object
+      description: |
+        The **canonical** event model — the single source of truth is
+        `docs/data-model/event-contract.md` (ADR-0007). The browser tracker sends a
+        compact wire form with short keys; the ingestion layer normalises wire →
+        canonical on receipt. This schema is the canonical form, which server-side
+        integrations may submit directly.
+
+        Server-derived fields (`visitor_id`, `session_id`, geo, `referrer_source`,
+        device/browser/OS) are NOT part of this schema: they are computed by the
+        ingestion layer and never accepted from the client (ADR-0008).
+      required:
+        - event_id
+        - site_key
+        - event_name
+        - timestamp
+        - seq
+        - url
+        - pathname
+        - hostname
+      properties:
+        event_id:
+          type: string
+          description: Client-generated unique event identifier (UUID v4). Used for deduplication.
+          example: "8f14e45f-ce64-4f1a-9b2d-2c3a4b5c6d7e"
+          maxLength: 36
+
+        site_key:
+          type: string
+          description: "Public tracker key identifying the site (ADR-0009). Prefix `stk_`."
+          example: "stk_abcdef1234567890"
+
+        event_name:
+          type: string
+          description: |
+            Name of the event. Drawn from the closed vocabulary in
+            `event-contract.md §4`: `pageview`, `route_change`, `engagement`, `click`,
+            `rage_click`, `dead_click`, `scroll_depth`, `form_focus`, `form_submit`,
+            `form_abandon`, `element_visibility`, `custom`, `conversion`,
+            `web_vital_lcp`, `web_vital_cls`, `web_vital_inp`, `js_error`,
+            `heatmap_batch`. Custom event names must not start with `sf_` (reserved).
+          example: "pageview"
+          minLength: 1
+          maxLength: 100
+
+        seq:
+          type: integer
+          description: Monotonic per-session sequence counter, used to reconstruct ordered event streams.
+          minimum: 0
+          example: 4
+
+        tracker_version:
+          type: string
+          description: Version of the tracker build that produced the event.
+          maxLength: 20
+          example: "1.0.0"
+
+        timestamp:
+          type: string
+          format: date-time
+          description: Client-side UTC timestamp when the event occurred (millisecond precision).
+          example: "2025-06-15T14:30:00.123Z"
+
+        url:
+          type: string
+          format: uri
+          description: "Full URL of the page where the event occurred. Query strings are stripped server-side if `strip_query_params` is enabled in site settings."
+          maxLength: 2048
+          example: "https://example.com/blog/post-1?utm_source=twitter"
+
+        pathname:
+          type: string
+          description: URL path component, without query string or fragment.
+          maxLength: 2048
+          example: "/blog/post-1"
+
+        hostname:
+          type: string
+          description: Hostname component of the URL.
+          maxLength: 253
+          example: "example.com"
+
+        referrer:
+          type: string
+          format: uri
+          description: Full referrer URL. Omit or send empty string for direct traffic.
+          maxLength: 2048
+
+        referrer_domain:
+          type: string
+          description: Hostname of the referrer. Derived server-side if not provided.
+          maxLength: 253
+          example: "google.com"
+
+        utm_source:
+          type: string
+          maxLength: 200
+          example: "newsletter"
+
+        utm_medium:
+          type: string
+          maxLength: 200
+          example: "email"
+
+        utm_campaign:
+          type: string
+          maxLength: 200
+          example: "june-launch"
+
+        utm_term:
+          type: string
+          maxLength: 200
+
+        utm_content:
+          type: string
+          maxLength: 200
+
+        title:
+          type: string
+          description: "`document.title` at capture time."
+          maxLength: 512
+          example: "Pricing — Acme"
+
+        screen_width:
+          type: integer
+          description: Screen width in CSS pixels (`screen.width`).
+          minimum: 0
+          maximum: 20000
+          example: 2560
+
+        screen_height:
+          type: integer
+          description: Screen height in CSS pixels (`screen.height`).
+          minimum: 0
+          maximum: 20000
+          example: 1600
+
+        viewport_width:
+          type: integer
+          description: Viewport width in CSS pixels at capture time.
+          minimum: 0
+          maximum: 20000
+          example: 1440
+
+        viewport_height:
+          type: integer
+          description: Viewport height in CSS pixels at capture time.
+          minimum: 0
+          maximum: 20000
+          example: 900
+
+        device_pixel_ratio:
+          type: number
+          description: "`window.devicePixelRatio`, rounded."
+          minimum: 0
+
+        connection_type:
+          type: string
+          description: "`effectiveType` from the NetworkInformation API, when available."
+          maxLength: 16
+          example: "4g"
+
+        language:
+          type: string
+          description: "BCP 47 language tag from `navigator.language`."
+          maxLength: 35
+          example: "fr-FR"
+
+        timezone:
+          type: string
+          description: IANA timezone identifier.
+          maxLength: 50
+          example: "Europe/Paris"
+
+        behavioral:
+          $ref: "#/components/schemas/BehavioralSignals"
+
+        custom_properties:
+          type: object
+          description: |
+            Arbitrary key-value pairs for custom event properties. Keys must match `[a-z0-9_]{1,50}`.
+            Values must be strings, numbers, or booleans. Maximum 20 properties per event.
+            Total serialised size of custom_properties must not exceed 4 KB.
+          additionalProperties:
+            oneOf:
+              - type: string
+                maxLength: 1000
+              - type: number
+              - type: boolean
+          maxProperties: 20
+
+    BehavioralSignals:
+      type: object
+      description: |
+        Behavioral tracking signals attached to `click`, `rage_click`, `dead_click`,
+        `scroll_depth`, and `engagement` events. See `event-contract.md §5`.
+      properties:
+        click_x:
+          type: integer
+          description: |
+            Click X coordinate in CSS pixels, **document-relative** (`clientX + scrollX`),
+            so it remains valid after scroll. One coordinate origin is used end to end.
+          minimum: 0
+
+        click_y:
+          type: integer
+          description: Click Y coordinate in CSS pixels, document-relative (`clientY + scrollY`).
+          minimum: 0
+
+        click_x_pct:
+          type: number
+          format: float
+          description: |
+            `click_x` as a percentage of total document width (0–100). The stable
+            cross-resolution representation; basis for the heatmap grid.
+          minimum: 0
+          maximum: 100
+
+        click_y_pct:
+          type: number
+          format: float
+          description: "`click_y` as a percentage of total document height (0–100)."
+          minimum: 0
+          maximum: 100
+
+        element_tag:
+          type: string
+          description: HTML tag name of the clicked element (lowercased).
+          maxLength: 50
+          example: "button"
+
+        element_text:
+          type: string
+          description: Visible text content of the clicked element (trimmed, max 200 chars).
+          maxLength: 200
+          example: "Start free trial"
+
+        element_selector:
+          type: string
+          description: CSS selector path of the clicked element (auto-generated by tracker).
+          maxLength: 500
+          example: "main > section.pricing .cta-button"
+
+        element_id:
+          type: string
+          description: "`id` attribute of the clicked element, if present."
+          maxLength: 200
+
+        scroll_depth_pct:
+          type: integer
+          description: Scroll-depth threshold crossed, or maximum depth reached, as a percentage (0–100).
+          minimum: 0
+          maximum: 100
+
+        scroll_depth_px:
+          type: integer
+          description: Absolute vertical scroll offset in CSS pixels.
+          minimum: 0
+
+        engagement_time_ms:
+          type: integer
+          description: Active engagement time in milliseconds (tab focused and user active) since the last heartbeat.
+          minimum: 0
+
+        is_rage_click:
+          type: boolean
+          description: |
+            Set by the tracker when this click is part of a rage-click burst
+            (≥ 3 clicks on the same target within 1000 ms). Backend-validated before storage.
+
+    EventBatch:
+      type: object
+      description: |
+        The unified batch envelope (`event-contract.md §3`). Root key `events`.
+        Used by `POST /events/batch` and accepted by `POST /events` with a single entry.
+      required:
+        - events
+      properties:
+        events:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/EventPayload"
+        sent_at:
+          type: string
+          format: date-time
+          description: Timestamp when the batch was dispatched by the client.
+        sdk:
+          type: string
+          description: SDK identifier.
+          example: "tracker"
+        sdk_v:
+          type: string
+          description: SDK version.
+          example: "1.0.0"
+
+    BatchResultResponse:
+      type: object
+      description: |
+        Returned with `200 OK` from `POST /events/batch` when some events were
+        rejected. A normal success body — not an RFC 9457 Problem Details object.
+      required:
+        - accepted
+        - rejected
+        - results
+      properties:
+        accepted:
+          type: integer
+          description: Number of events accepted for ingestion.
+        rejected:
+          type: integer
+          description: Number of events rejected by validation.
+        results:
+          type: array
+          items:
+            type: object
+            required:
+              - index
+              - status
+            properties:
+              index:
+                type: integer
+                description: 0-based index of the event within the submitted batch.
+              status:
+                type: string
+                enum: [accepted, rejected]
+              code:
+                type: string
+                description: Error slug when `status` is `rejected`.
+              errors:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FieldError"
+
+    # -----------------------------------------------------------------------
+    # AUTH
+    # -----------------------------------------------------------------------
+
+    TokenResponse:
+      type: object
+      required:
+        - access_token
+        - token_type
+        - expires_in
+      properties:
+        access_token:
+          type: string
+          description: JWT access token (ES256, 15-minute TTL).
+        token_type:
+          type: string
+          enum: [Bearer]
+        expires_in:
+          type: integer
+          description: Seconds until the access token expires.
+          example: 900
+
+    # -----------------------------------------------------------------------
+    # USERS
+    # -----------------------------------------------------------------------
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID.
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+          maxLength: 200
+        avatar_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          maxLength: 254
+
+    # -----------------------------------------------------------------------
+    # TEAMS
+    # -----------------------------------------------------------------------
+
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+          description: URL-safe unique identifier for the team.
+        member_count:
+          type: integer
+        site_count:
+          type: integer
+        current_user_role:
+          $ref: "#/components/schemas/TeamRole"
+        created_at:
+          type: string
+          format: date-time
+
+    TeamCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+
+    TeamUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+
+    TeamMember:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Membership record UUID.
+        user_id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          $ref: "#/components/schemas/TeamRole"
+        status:
+          type: string
+          enum: [active, invited, suspended]
+        joined_at:
+          type: string
+          format: date-time
+
+    TeamRole:
+      type: string
+      enum: [owner, admin, editor, viewer]
+      description: |
+        Four team roles (ADR-0009):
+        - `owner`: Full control including billing and team deletion. One per team.
+        - `admin`: Site management, member invite/remove, API-key management, all data.
+        - `editor`: Create/edit sites, goals, funnels, segments, reports. No member or billing management.
+        - `viewer`: Read-only access to dashboards, analytics, and saved reports.
+
+    # -----------------------------------------------------------------------
+    # API KEYS
+    # -----------------------------------------------------------------------
+
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID.
+        name:
+          type: string
+          description: Human-readable label.
+        key_prefix:
+          type: string
+          description: "First 12 characters of the key (masked). e.g. `sfk_live_xxxx`."
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiKeyScope"
+        site_ids:
+          type: array
+          description: List of site IDs this key is restricted to. Empty array means all sites in the team.
+          items:
+            type: string
+        expires_at:
+          type: ["string", "null"]
+          format: date-time
+          description: Expiry timestamp, or null for no expiry.
+        last_used_at:
+          type: ["string", "null"]
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    ApiKeyCreateRequest:
+      type: object
+      required:
+        - name
+        - scopes
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        scopes:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ApiKeyScope"
+        site_ids:
+          type: array
+          description: Restrict key to these site IDs. Omit or empty for all sites in the team.
+          items:
+            type: string
+        expires_at:
+          type: ["string", "null"]
+          format: date-time
+          description: Optional expiry. Null or omitted = never expires.
+
+    ApiKeyScope:
+      type: string
+      enum:
+        - analytics:read
+        - sites:read
+        - sites:write
+        - reports:read
+        - reports:write
+
+    # -----------------------------------------------------------------------
+    # SITES
+    # -----------------------------------------------------------------------
+
+    Site:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID.
+        team_id:
+          type: string
+        name:
+          type: string
+        domain:
+          type: string
+          description: "Primary domain (e.g. `example.com`)."
+        tracker_key:
+          type: string
+          description: "Tracker key (`stk_...`) for use in the JS snippet."
+        timezone:
+          type: string
+          description: IANA timezone for display in the dashboard.
+          example: "Europe/Paris"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SiteCreateRequest:
+      type: object
+      required:
+        - team_id
+        - name
+        - domain
+      properties:
+        team_id:
+          type: string
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        domain:
+          type: string
+          description: "Primary domain without scheme (e.g., `example.com`)."
+          maxLength: 253
+        timezone:
+          type: string
+          description: "IANA timezone. Defaults to `UTC`."
+          default: "UTC"
+
+    SiteUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        domain:
+          type: string
+          maxLength: 253
+        timezone:
+          type: string
+
+    SiteSettings:
+      type: object
+      description: Full configuration for a site. Use PUT to replace the entire settings object.
+      properties:
+        allowed_domains:
+          type: array
+          description: "Domains/origins allowed to send events. Wildcards supported (e.g., `*.example.com`). Leave empty to allow all origins (not recommended for production)."
+          items:
+            type: string
+          maxItems: 50
+
+        excluded_ips:
+          type: array
+          description: IPv4/IPv6 addresses or CIDR ranges to exclude from tracking.
+          items:
+            type: string
+          maxItems: 100
+
+        data_retention_days:
+          type: integer
+          description: How many days of event data to retain in ClickHouse. Minimum 30, maximum 730.
+          minimum: 30
+          maximum: 730
+          default: 365
+
+        strip_query_params:
+          type: boolean
+          description: "Strip query string parameters from `url` and `pathname` before storage."
+          default: false
+
+        custom_domain_enabled:
+          type: boolean
+          description: Whether to track across custom domains mapped to the same site.
+          default: false
+
+        tracker_config:
+          $ref: "#/components/schemas/TrackerConfig"
+
+    TrackerConfig:
+      type: object
+      description: Controls what the JS tracker collects.
+      properties:
+        track_clicks:
+          type: boolean
+          description: Automatically capture click events with behavioral signals.
+          default: true
+
+        track_scroll:
+          type: boolean
+          description: Capture scroll depth on pageview.
+          default: true
+
+        track_engagement_time:
+          type: boolean
+          description: Measure active engagement time per page.
+          default: true
+
+        track_outbound_links:
+          type: boolean
+          description: Fire events when users click external links.
+          default: true
+
+        hash_based_routing:
+          type: boolean
+          description: |
+            Track `#hash` changes as SPA navigations (`route_change` events).
+            Matches `site_settings.hash_based_routing` in the PostgreSQL schema.
+          default: false
+
+        ignored_selectors:
+          type: array
+          description: CSS selectors of elements to exclude from click tracking.
+          items:
+            type: string
+          maxItems: 50
+
+        sampling_rate:
+          type: number
+          format: float
+          description: |
+            Per-session client-side sampling rate (0.0–1.0). Evaluated once per
+            session and held in tracker memory; 1.0 = track every session,
+            0.25 = track a random 25% of sessions, 0.0 = track nothing. This is
+            the only sampling the cookieless tracker can do without client state
+            (it has no `visitor_id` — that is server-derived). Matches
+            `site_settings.sampling_rate` (range 0.000–1.000).
+          minimum: 0.0
+          maximum: 1.0
+          default: 1.0
+
+    # -----------------------------------------------------------------------
+    # ANALYTICS — SHARED
+    # -----------------------------------------------------------------------
+
+    AnalyticsQueryBase:
+      type: object
+      required:
+        - date_from
+        - date_to
+      properties:
+        date_from:
+          type: string
+          format: date
+          description: "Start of the query range (inclusive), in `YYYY-MM-DD` format."
+          example: "2025-06-01"
+
+        date_to:
+          type: string
+          format: date
+          description: "End of the query range (inclusive), in `YYYY-MM-DD` format."
+          example: "2025-06-30"
+
+        compare_period:
+          type: string
+          description: |
+            Optional comparison period. `previous_period` uses the same-length period
+            immediately before `date_from`. `previous_year` uses the same calendar dates
+            one year prior.
+          enum: [previous_period, previous_year]
+
+        filters:
+          type: array
+          description: Array of filter conditions applied to all query results.
+          items:
+            $ref: "#/components/schemas/Filter"
+
+        filter_combination:
+          type: string
+          enum: [and, or]
+          default: and
+          description: "Boolean combination of the top-level `filters` array."
+
+        segment_id:
+          type: string
+          description: "Apply a saved segment. Merged with any inline `filters` via `and`."
+
+        metrics:
+          type: array
+          description: Metrics to compute. Defaults to all standard metrics if omitted.
+          items:
+            $ref: "#/components/schemas/MetricName"
+
+    Filter:
+      type: object
+      required:
+        - property
+        - operator
+        - value
+      properties:
+        property:
+          type: string
+          description: The event dimension to filter on.
+          example: "pathname"
+        operator:
+          type: string
+          enum: [eq, neq, in, not_in, contains, not_contains, starts_with, gt, gte, lt, lte]
+        value:
+          description: "The filter value. Type depends on `operator` and `property`."
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+            - type: array
+              items:
+                oneOf:
+                  - type: string
+                  - type: number
+
+    MetricName:
+      type: string
+      enum:
+        - visitors
+        - pageviews
+        - sessions
+        - bounce_rate
+        - avg_duration
+        - events
+        - conversion_rate
+
+    # -----------------------------------------------------------------------
+    # ANALYTICS — RESPONSES
+    # -----------------------------------------------------------------------
+
+    AggregateMetricsResponse:
+      type: object
+      properties:
+        period:
+          $ref: "#/components/schemas/DateRange"
+        metrics:
+          type: object
+          description: Computed metric values for the primary period.
+          properties:
+            visitors:
+              type: integer
+            pageviews:
+              type: integer
+            sessions:
+              type: integer
+            bounce_rate:
+              type: number
+              format: float
+              description: Percentage (0–100).
+            avg_duration:
+              type: number
+              format: float
+              description: Average session duration in seconds.
+            events:
+              type: integer
+            conversion_rate:
+              type: number
+              format: float
+              description: Percentage of sessions that produced a `conversion` event (0–100).
+        comparison:
+          type: object
+          description: "Present only when `compare_period` was specified."
+          properties:
+            period:
+              $ref: "#/components/schemas/DateRange"
+            metrics:
+              type: object
+              additionalProperties:
+                type: number
+            change_pct:
+              type: object
+              description: Percentage change vs primary period for each metric.
+              additionalProperties:
+                type: ["number", "null"]
+
+    TimeSeriesResponse:
+      type: object
+      properties:
+        interval:
+          type: string
+          enum: [minute, hour, day, week, month]
+        period:
+          $ref: "#/components/schemas/DateRange"
+        series:
+          type: array
+          items:
+            type: object
+            properties:
+              bucket:
+                type: string
+                format: date-time
+                description: Start of the time bucket (UTC).
+              metrics:
+                type: object
+                additionalProperties:
+                  type: number
+
+    BreakdownResponse:
+      type: object
+      properties:
+        property:
+          type: string
+        period:
+          $ref: "#/components/schemas/DateRange"
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+                description: "The dimension value (e.g., pathname `/blog/post-1`)."
+              metrics:
+                type: object
+                additionalProperties:
+                  type: number
+        total_rows:
+          type: integer
+          description: Total number of distinct values for this dimension in the period (before limit).
+
+    RealtimeResponse:
+      type: object
+      properties:
+        current_visitors:
+          type: integer
+          description: Unique visitors active in the last 5 minutes.
+        top_pages:
+          type: array
+          maxItems: 10
+          items:
+            type: object
+            properties:
+              pathname:
+                type: string
+              visitors:
+                type: integer
+        top_sources:
+          type: array
+          maxItems: 10
+          items:
+            type: object
+            properties:
+              referrer_domain:
+                type: string
+              visitors:
+                type: integer
+        updated_at:
+          type: string
+          format: date-time
+
+    RealtimeEvent:
+      type: object
+      description: One newly ingested event, pushed on the realtime SSE stream's `event` channel.
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        event_name:
+          type: string
+        pathname:
+          type: string
+        referrer_source:
+          type: string
+        country:
+          type: string
+        device_type:
+          type: string
+        browser:
+          type: string
+
+    FunnelQueryRequest:
+      type: object
+      description: |
+        Runs a saved funnel over a date range. The funnel's steps are defined by the
+        persisted funnel (`funnel_id`); they are not supplied inline.
+      required:
+        - date_from
+        - date_to
+        - funnel_id
+      properties:
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+        funnel_id:
+          type: string
+          description: ID of a saved funnel (see `POST /sites/{site_id}/funnels`).
+        conversion_window_days:
+          type: integer
+          description: Maximum number of days between the first and last step.
+          minimum: 1
+          maximum: 90
+          default: 30
+        filters:
+          type: array
+          description: Optional filters applied to the whole funnel (e.g. segment by device).
+          items:
+            $ref: "#/components/schemas/Filter"
+        segment_id:
+          type: string
+          description: Optional saved segment applied to the funnel population.
+
+    FunnelStep:
+      type: object
+      description: One step of a persisted funnel definition.
+      required:
+        - step_index
+        - trigger_type
+      properties:
+        step_index:
+          type: integer
+          description: 0-based ordinal of the step within the funnel.
+          minimum: 0
+        label:
+          type: string
+          description: Human-readable label for display in the dashboard.
+          maxLength: 100
+        trigger_type:
+          type: string
+          enum: [pageview, event]
+          description: |
+            `pageview` — the step matches when a pageview's `pathname` matches `url_pattern`.
+            `event` — the step matches when an event's name equals `event_name`.
+        url_pattern:
+          type: string
+          description: "URL/path pattern (supports `*`). Required when `trigger_type` is `pageview`."
+        event_name:
+          type: string
+          description: "Event name to match. Required when `trigger_type` is `event`."
+        filters:
+          type: array
+          description: Additional filter conditions for this specific step.
+          items:
+            $ref: "#/components/schemas/Filter"
+
+    Funnel:
+      type: object
+      description: A persisted, named funnel (`postgres.funnels`).
+      properties:
+        id:
+          type: string
+        site_id:
+          type: string
+        name:
+          type: string
+        steps:
+          type: array
+          minItems: 2
+          maxItems: 16
+          items:
+            $ref: "#/components/schemas/FunnelStep"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    FunnelCreateRequest:
+      type: object
+      required:
+        - name
+        - steps
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        steps:
+          type: array
+          minItems: 2
+          maxItems: 16
+          items:
+            $ref: "#/components/schemas/FunnelStep"
+
+    Goal:
+      type: object
+      description: A persisted conversion goal (`postgres.goals`).
+      properties:
+        id:
+          type: string
+        site_id:
+          type: string
+        name:
+          type: string
+        trigger_type:
+          type: string
+          enum: [pageview, event]
+        url_pattern:
+          type: ["string", "null"]
+          description: "URL pattern (supports `*`). Set when `trigger_type` is `pageview`."
+        event_name:
+          type: ["string", "null"]
+          description: "Event name to match. Set when `trigger_type` is `event`."
+        currency:
+          type: ["string", "null"]
+          description: ISO-4217 currency for revenue attribution, if any.
+        revenue_value:
+          type: ["number", "null"]
+          description: Static revenue value per conversion, or null when revenue is tracked dynamically.
+        created_at:
+          type: string
+          format: date-time
+
+    GoalCreateRequest:
+      type: object
+      required:
+        - name
+        - trigger_type
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        trigger_type:
+          type: string
+          enum: [pageview, event]
+        url_pattern:
+          type: string
+          description: "Required when `trigger_type` is `pageview`."
+        event_name:
+          type: string
+          description: "Required when `trigger_type` is `event`."
+        currency:
+          type: string
+          maxLength: 3
+        revenue_value:
+          type: number
+
+    FunnelResponse:
+      type: object
+      properties:
+        period:
+          $ref: "#/components/schemas/DateRange"
+        conversion_window_days:
+          type: integer
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              step_index:
+                type: integer
+                description: 0-based step index.
+              label:
+                type: string
+              event_name:
+                type: string
+              entered:
+                type: integer
+                description: Number of users who entered this step.
+              converted:
+                type: integer
+                description: Number of users who completed this step.
+              dropped:
+                type: integer
+                description: Number of users who dropped off at this step.
+              conversion_rate_pct:
+                type: number
+                format: float
+                description: Percentage of entrants who completed this step.
+              avg_time_to_convert_seconds:
+                type: number
+                description: Average time to complete this step from the previous step.
+
+    RetentionQueryRequest:
+      type: object
+      required:
+        - date_from
+        - date_to
+      properties:
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+        interval:
+          type: string
+          enum: [week, month]
+          default: week
+        return_event:
+          type: string
+          description: "Event name that counts as a \"return\". Defaults to `pageview`."
+          default: pageview
+
+    RetentionResponse:
+      type: object
+      properties:
+        interval:
+          type: string
+          enum: [week, month]
+        cohorts:
+          type: array
+          description: One entry per cohort period.
+          items:
+            type: object
+            properties:
+              cohort_date:
+                type: string
+                format: date
+              cohort_size:
+                type: integer
+              retention:
+                type: array
+                description: Retention rate for each subsequent period (period 0 = 100%).
+                items:
+                  type: object
+                  properties:
+                    period:
+                      type: integer
+                    retained_count:
+                      type: integer
+                    retention_pct:
+                      type: number
+                      format: float
+
+    HeatmapQueryRequest:
+      type: object
+      required:
+        - date_from
+        - date_to
+        - pathname
+      properties:
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+        pathname:
+          type: string
+          description: "Exact pathname or glob pattern (e.g., `/blog/*`)."
+          maxLength: 2048
+        viewport_width_min:
+          type: integer
+          minimum: 0
+          description: Filter to events from viewports at least this wide.
+        viewport_width_max:
+          type: integer
+          maximum: 10000
+          description: Filter to events from viewports no wider than this.
+        heatmap_type:
+          type: string
+          enum: [click, scroll]
+          default: click
+
+    HeatmapResponse:
+      type: object
+      properties:
+        pathname:
+          type: string
+        period:
+          $ref: "#/components/schemas/DateRange"
+        heatmap_type:
+          type: string
+          enum: [click, scroll]
+        total_events:
+          type: integer
+        click_points:
+          type: array
+          description: Aggregated click buckets. Each bucket is a 10x10px normalised grid cell.
+          items:
+            type: object
+            properties:
+              x_pct:
+                type: number
+                format: float
+                description: Horizontal position as percentage of page width (bucket centre).
+              y_pct:
+                type: number
+                format: float
+                description: Vertical position as percentage of page height (bucket centre).
+              count:
+                type: integer
+                description: Number of clicks in this bucket.
+              weight:
+                type: number
+                format: float
+                description: Normalised weight (0–1) relative to the highest-count bucket.
+        scroll_depths:
+          type: array
+          description: Distribution of maximum scroll depth reached (present for scroll heatmaps).
+          items:
+            type: object
+            properties:
+              depth_pct:
+                type: integer
+                description: Scroll depth bucket (0, 10, 20, ..., 100).
+              sessions_pct:
+                type: number
+                format: float
+                description: Percentage of sessions that reached at least this depth.
+
+    # -----------------------------------------------------------------------
+    # ANALYTICS — SEGMENTS
+    # -----------------------------------------------------------------------
+
+    Segment:
+      type: object
+      properties:
+        id:
+          type: string
+        site_id:
+          type: string
+        name:
+          type: string
+        filters:
+          type: array
+          items:
+            $ref: "#/components/schemas/Filter"
+        filter_combination:
+          type: string
+          enum: [and, or]
+        created_by:
+          type: string
+          description: User ID.
+        created_at:
+          type: string
+          format: date-time
+
+    SegmentCreateRequest:
+      type: object
+      required:
+        - name
+        - filters
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        filters:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Filter"
+        filter_combination:
+          type: string
+          enum: [and, or]
+          default: and
+
+    # -----------------------------------------------------------------------
+    # REPORTING
+    # -----------------------------------------------------------------------
+
+    SavedReport:
+      type: object
+      properties:
+        id:
+          type: string
+        site_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        report_type:
+          type: string
+          enum: [aggregate, timeseries, breakdown, funnel, retention, heatmap]
+        query:
+          type: object
+          description: Serialised query parameters for the saved report.
+          additionalProperties: true
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SavedReportCreateRequest:
+      type: object
+      required:
+        - name
+        - report_type
+        - query
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        report_type:
+          type: string
+          enum: [aggregate, timeseries, breakdown, funnel, retention, heatmap]
+        query:
+          type: object
+          additionalProperties: true
+
+    ScheduledReport:
+      type: object
+      properties:
+        id:
+          type: string
+        site_id:
+          type: string
+        saved_report_id:
+          type: ["string", "null"]
+          description: Optional reference to a saved report config.
+        name:
+          type: string
+        recipients:
+          type: array
+          items:
+            type: string
+            format: email
+        schedule_cron:
+          type: string
+          description: Cron expression for the send schedule (UTC).
+          example: "0 9 * * 1"
+        timezone:
+          type: string
+          description: Timezone for the cron schedule.
+          example: "Europe/Paris"
+        is_active:
+          type: boolean
+        last_sent_at:
+          type: ["string", "null"]
+          format: date-time
+        next_send_at:
+          type: ["string", "null"]
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    ScheduledReportCreateRequest:
+      type: object
+      required:
+        - name
+        - recipients
+        - schedule_cron
+        - timezone
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        saved_report_id:
+          type: string
+        recipients:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: string
+            format: email
+        schedule_cron:
+          type: string
+          description: "Standard 5-part cron expression (UTC). Minimum interval: daily."
+        timezone:
+          type: string
+
+    ScheduledReportUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        recipients:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: string
+            format: email
+        schedule_cron:
+          type: string
+        timezone:
+          type: string
+        is_active:
+          type: boolean
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+        site_id:
+          type: string
+        name:
+          type: string
+        metric:
+          $ref: "#/components/schemas/MetricName"
+        condition:
+          type: string
+          enum: [above, below, change_pct_above, change_pct_below]
+        threshold:
+          type: number
+        comparison_period:
+          type: string
+          enum: [previous_day, previous_week, previous_month]
+          description: Reference period for percentage-change conditions.
+        filters:
+          type: array
+          items:
+            $ref: "#/components/schemas/Filter"
+        notification_channels:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationChannel"
+        is_active:
+          type: boolean
+        last_triggered_at:
+          type: ["string", "null"]
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    AlertCreateRequest:
+      type: object
+      required:
+        - name
+        - metric
+        - condition
+        - threshold
+        - notification_channels
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        metric:
+          $ref: "#/components/schemas/MetricName"
+        condition:
+          type: string
+          enum: [above, below, change_pct_above, change_pct_below]
+        threshold:
+          type: number
+        comparison_period:
+          type: string
+          enum: [previous_day, previous_week, previous_month]
+        filters:
+          type: array
+          items:
+            $ref: "#/components/schemas/Filter"
+        notification_channels:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/NotificationChannel"
+
+    AlertUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        condition:
+          type: string
+          enum: [above, below, change_pct_above, change_pct_below]
+        threshold:
+          type: number
+        is_active:
+          type: boolean
+        notification_channels:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationChannel"
+
+    NotificationChannel:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [email, webhook, slack]
+        email:
+          type: string
+          format: email
+          description: "Required when `type` is `email`."
+        webhook_url:
+          type: string
+          format: uri
+          description: "Required when `type` is `webhook` or `slack`."
+
+    Export:
+      type: object
+      properties:
+        id:
+          type: string
+        site_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        format:
+          type: string
+          enum: [csv, ndjson]
+        query:
+          type: object
+          additionalProperties: true
+        row_count:
+          type: ["integer", "null"]
+          description: "Present when status is `completed`."
+        file_size_bytes:
+          type: ["integer", "null"]
+        download_url:
+          type: ["string", "null"]
+          format: uri
+          description: "Pre-signed download URL. Present and valid for 1 hour when status is `completed`."
+        expires_at:
+          type: ["string", "null"]
+          format: date-time
+          description: When the download URL expires.
+        error_message:
+          type: ["string", "null"]
+          description: "Human-readable error description when status is `failed`."
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: ["string", "null"]
+          format: date-time
+
+    ExportCreateRequest:
+      type: object
+      required:
+        - format
+        - query
+      properties:
+        format:
+          type: string
+          enum: [csv, ndjson]
+        query:
+          type: object
+          description: Query parameters (same shape as the corresponding analytics query endpoint body).
+          additionalProperties: true
+        notify_email:
+          type: string
+          format: email
+          description: Optional email to notify when the export is ready.
+
+    # -----------------------------------------------------------------------
+    # SHARED
+    # -----------------------------------------------------------------------
+
+    DateRange:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        pagination:
+          type: object
+          properties:
+            next_cursor:
+              type: ["string", "null"]
+            prev_cursor:
+              type: ["string", "null"]
+            has_next:
+              type: boolean
+            has_prev:
+              type: boolean
+            limit:
+              type: integer
+
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - trace_id
+      properties:
+        type:
+          type: string
+          format: uri
+          example: "https://statflow.io/errors/validation-failed"
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        trace_id:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldError"
+
+    FieldError:
+      type: object
+      properties:
+        field:
+          type: string
+        code:
+          type: string
+        message:
+          type: string
+
+  # =========================================================================
+  # RESPONSES (reusable)
+  # =========================================================================
+
+  responses:
+
+    BadRequest:
+      description: Bad Request — malformed JSON or unknown fields.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://statflow.io/errors/malformed-json"
+            title: "Malformed JSON"
+            status: 400
+            trace_id: "01HXK2Q4B7T8NMPZW6RDYGJ5FM"
+
+    Unauthorized:
+      description: Unauthorized — missing or invalid authentication credential.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://statflow.io/errors/authentication-required"
+            title: "Authentication Required"
+            status: 401
+            trace_id: "01HXK2Q4B7T8NMPZW6RDYGJ5FM"
+
+    Forbidden:
+      description: Forbidden — authenticated but insufficient permission.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://statflow.io/errors/permission-denied"
+            title: "Permission Denied"
+            status: 403
+            trace_id: "01HXK2Q4B7T8NMPZW6RDYGJ5FM"
+
+    NotFound:
+      description: Not Found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://statflow.io/errors/not-found"
+            title: "Not Found"
+            status: 404
+            trace_id: "01HXK2Q4B7T8NMPZW6RDYGJ5FM"
+
+    Conflict:
+      description: Conflict — duplicate resource.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://statflow.io/errors/conflict"
+            title: "Conflict"
+            status: 409
+            trace_id: "01HXK2Q4B7T8NMPZW6RDYGJ5FM"
+
+    UnprocessableEntity:
+      description: Unprocessable Entity — business rule validation failure.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://statflow.io/errors/validation-failed"
+            title: "Validation Failed"
+            status: 422
+            trace_id: "01HXK2Q4B7T8NMPZW6RDYGJ5FM"
+            errors:
+              - field: "data_retention_days"
+                code: "out_of_range"
+                message: "data_retention_days must be between 30 and 730."
+
+    PayloadTooLarge:
+      description: Payload Too Large — event exceeds size limit.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://statflow.io/errors/event-payload-too-large"
+            title: "Event Payload Too Large"
+            status: 413
+            trace_id: "01HXK2Q4B7T8NMPZW6RDYGJ5FM"
+
+    TooManyRequests:
+      description: Too Many Requests — rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://statflow.io/errors/rate-limit-exceeded"
+            title: "Rate Limit Exceeded"
+            status: 429
+            trace_id: "01HXK2Q4B7T8NMPZW6RDYGJ5FM"
+
+    ServiceUnavailable:
+      description: Service Unavailable — upstream dependency (ClickHouse/PostgreSQL) unreachable.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://statflow.io/errors/dependency-unavailable"
+            title: "Dependency Unavailable"
+            status: 503
+            trace_id: "01HXK2Q4B7T8NMPZW6RDYGJ5FM"
+
+    GatewayTimeout:
+      description: Gateway Timeout — analytics query exceeded maximum execution time.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://statflow.io/errors/query-timeout"
+            title: "Query Timeout"
+            status: 504
+            trace_id: "01HXK2Q4B7T8NMPZW6RDYGJ5FM"
