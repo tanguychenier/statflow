@@ -18,7 +18,7 @@
 # =============================================================================
 
 # ── Composer binary ───────────────────────────────────────────────────────────
-FROM composer:2.9 AS composer-bin
+FROM composer:2.10 AS composer-bin
 
 # ── Shared base: FrankenPHP with all required extensions ─────────────────────
 FROM dunglas/frankenphp:1.12-php8.3 AS base
