@@ -60,9 +60,12 @@ final readonly class RedisStreamConsumer
     public function ensureGroup(): void
     {
         // MKSTREAM creates the stream if absent; BUSYGROUP means it already exists.
+        // Start the group at 0 (stream beginning), not $ (latest): events buffered
+        // before the worker first runs must still be delivered — an at-least-once
+        // ingestion buffer cannot silently drop anything written before startup.
         try {
             $this->redis->executeRaw([
-                'XGROUP', 'CREATE', self::STREAM_KEY, self::GROUP, '$', 'MKSTREAM',
+                'XGROUP', 'CREATE', self::STREAM_KEY, self::GROUP, '0', 'MKSTREAM',
             ]);
         } catch (\Throwable $e) {
             if (!str_contains($e->getMessage(), 'BUSYGROUP')) {

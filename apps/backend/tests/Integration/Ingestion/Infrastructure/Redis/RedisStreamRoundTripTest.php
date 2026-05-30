@@ -84,14 +84,15 @@ final class RedisStreamRoundTripTest extends TestCase
         $consumer = new RedisStreamConsumer($this->redis, $this->codec, $this->batchWriter($writer));
         $consumer->ensureGroup();
 
-        // ensureGroup uses '$' as start id, so it only sees events appended after
-        // group creation; re-append to land entries the group can read.
+        // The group is created at 0 (stream start), so the two events buffered
+        // BEFORE it existed are still delivered, plus this one appended after —
+        // nothing written before the worker's first run is dropped.
         $buffer->append([$this->buffered('33333333-3333-4333-8333-333333333333')]);
 
         $written = $consumer->consumeOnce('worker-1', batchSize: 100, blockMs: 100);
 
-        self::assertSame(1, $written);
-        self::assertCount(1, $writer->allEvents());
+        self::assertSame(3, $written);
+        self::assertCount(3, $writer->allEvents());
 
         $pending = $this->redis->executeRaw(['XPENDING', 'events:raw', 'statflow_writers']);
         $pendingCount = is_array($pending) && isset($pending[0]) && is_numeric($pending[0]) ? (int) $pending[0] : 0;
