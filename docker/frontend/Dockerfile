@@ -7,7 +7,7 @@
 # =============================================================================
 
 # ── Development target ────────────────────────────────────────────────────────
-FROM node:22-bookworm-slim AS dev
+FROM node:26-bookworm-slim AS dev
 
 LABEL org.opencontainers.image.title="Statflow Frontend (dev)" \
       org.opencontainers.image.description="Vite development server for the Statflow Vue 3 SPA" \
@@ -40,7 +40,7 @@ EXPOSE 5173
 CMD ["pnpm", "run", "dev", "--host"]
 
 # ── Builder stage for production ──────────────────────────────────────────────
-FROM node:22-bookworm-slim AS builder
+FROM node:26-bookworm-slim AS builder
 
 RUN corepack enable
 
