@@ -29,7 +29,7 @@
     "@tanstack/vue-query": "^5.62.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "echarts": "^5.5.1",
+    "echarts": "^6.1.0",
     "lucide-vue-next": "^0.469.0",
     "pinia": "^2.3.0",
     "reka-ui": "^2.0.0",
